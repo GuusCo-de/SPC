@@ -1255,7 +1255,6 @@ const Dashboard: React.FC = () => {
         </div>
       )}
       {/* ...existing version/history modals and block delete modal... */}
-      {/* ...existing code... */}
     </div>
   );
 };
