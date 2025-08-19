@@ -1,0 +1,176 @@
+.contact-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+}
+
+.contact-card {
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 8px 48px #23252622, 0 1.5px 8px #23252611;
+  border-radius: 2.5rem;
+  padding: 1rem 2.5rem;
+  max-width: 420px;
+  width: 100%;
+  min-width: 520px;      /* Ensures a minimum width */
+  min-height: 520px;     /* Add this for a consistent card height */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-content: center;
+  text-align: center;
+  backdrop-filter: blur(6px);
+  margin-top: 0rem;   /* Reduce top margin */
+  margin-bottom: 5rem;
+}
+
+.contact-card h1 {
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #232526;
+}
+
+.contact-card p {
+  color: #4b5563;
+  margin-bottom: 2rem;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center input fields horizontally */
+  width: 100%;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: #232526;
+}
+
+.form-group input {
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 1rem;
+  border: 1.5px solid #e0e7ef;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #f8fafc;
+  color: #232526;
+  transition: border 0.2s;
+}
+
+.form-group input:focus {
+  border-color: #00b894;
+  outline: none;
+}
+
+.form-group textarea {
+  width: 100%;
+  min-width: 100%;
+  min-height: 2.7em;      /* Match input height (adjust if needed) */
+  max-height: 25rem; /* Limit height for textarea */
+  box-sizing: border-box;
+  padding: 0.7rem 1rem;
+  resize: vertical;       /* Only allow vertical resizing */
+  border: 1.5px solid #e0e7ef;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #f8fafc;
+  color: #232526;
+  transition: border 0.2s;
+}
+
+.form-group textarea:focus {
+  border-color: #00b894;
+  outline: none;
+}
+
+.cta {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.contact-info {
+  margin-top: 1.5rem;
+  color: #4b5563;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s;
+  margin-top: 0;
+  pointer-events: none;
+}
+
+.contact-info.show {
+  max-height: 300px; /* Adjust as needed for your content */
+  opacity: 1;
+  margin-top: 1.5rem;
+  pointer-events: auto;
+}
+
+.contact-info h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #232526;
+}
+
+.contact-info a {
+  color: #00b894;
+  text-decoration: none;
+}
+
+.toggle-info-btn {
+  display: block;
+  font-size: 1.5rem;
+  color: #000000;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  background-color: transparent;
+  width: 1rem;
+  align-self: center;
+}
+
+.contact-btn {
+  margin-top: 0.5rem;
+  width: 50%;
+  padding: 0.8rem 0;
+  background: linear-gradient(90deg, #00b894 0%, #00cec9 100%);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 32px;
+  box-shadow: 0 2px 8px #23252622;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, width 0.3s cubic-bezier(.4,0,.2,1); /* Add width transition */
+  letter-spacing: 0.04em;
+  align-self: center;
+}
+
+.contact-btn:hover,
+.contact-btn:focus {
+  width: 100%;
+  outline: none;
+}
+
+@media (max-width: 600px) {
+  .contact-card {
+    padding: 1.5rem 0.7rem;
+    border-radius: 1.2rem;
+  }
+}

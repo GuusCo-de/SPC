@@ -1,0 +1,361 @@
+{
+  "content": {
+    "heroTitle": "Snooker Pool Centrum",
+    "heroSubtitle": "Enjoy a modern pool lounge, specialty drinks, and a vibrant social scene.",
+    "infoTitle": "About Our Cafe",
+    "infoText": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "mainColor": "#00b894",
+    "accentColor": "#232526",
+    "backgroundImages": [
+      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/12/bc/33/4e/getlstd-property-photo.jpg?w=1200&h=-1&s=1",
+      "https://images.socialdeal.nl/bedrijf/pool-cafe-hart-van-utrecht-19062608564682.jpg",
+      "https://m-en.bredastudentapp.com/uploads/image/5c8252172a5ab06d94dfcd1e-large.jpg"
+    ],
+    "logoText": "SPC - Snooker Pool Centrum Capelle a/d IJssel",
+    "navLinks": [
+      {
+        "label": "Home",
+        "path": "/"
+      },
+      {
+        "label": "Menu",
+        "path": "/menu"
+      },
+      {
+        "label": "Contact",
+        "path": "/contact"
+      }
+    ],
+    "pages": [
+      {
+        "id": "home",
+        "title": "Home",
+        "path": "/",
+        "heroTitle": "Welcome to SPC",
+        "heroSubtitle": "Enjoy a modern pool lounge, specialty drinks, and a vibrant social scene. Test",
+        "blocks": [
+          {
+            "id": "flysrhk881754991086912",
+            "type": "heading",
+            "text": "Test 2"
+          },
+          {
+            "id": "w3br9lwb51754991091806",
+            "type": "text",
+            "text": "<p>Lorem Ipsum Dollor Sit Amet TESTTESTTEST</p>"
+          },
+          {
+            "id": "s97qfpcz41755090439191",
+            "type": "divider",
+            "text": ""
+          },
+          {
+            "id": "qqh2tpr8g1755090451870",
+            "type": "quote",
+            "text": "Lorem Ipsum Dolor sit amet"
+          }
+        ]
+      },
+      {
+        "id": "contact",
+        "title": "Contact",
+        "path": "/contact",
+        "heroTitle": "Contact Us",
+        "heroSubtitle": "Contact form and info.",
+        "blocks": []
+      },
+      {
+        "id": "sehb25udi1754992544057",
+        "title": "New Page",
+        "path": "/new",
+        "blocks": [
+          {
+            "id": "id7fywqk31754992554863",
+            "type": "heading",
+            "text": "Test123"
+          },
+          {
+            "id": "dbrkxb7su1754992561264",
+            "type": "divider",
+            "text": ""
+          },
+          {
+            "id": "xp8ag08y11754992567145",
+            "type": "quote",
+            "text": "test"
+          }
+        ],
+        "heroTitle": "Test Test",
+        "heroSubtitle": "12345"
+      }
+    ],
+    "__versionMeta": {
+      "version": "2",
+      "timestamp": 1755090464898,
+      "name": "",
+      "note": ""
+    },
+    "menu": [
+      {
+        "id": "0l5zri7ime8lt89k",
+        "name": "test1",
+        "price": "222",
+        "category": "Food",
+        "description": "s"
+      },
+      {
+        "id": "gmifqh7eme8ltjde",
+        "name": "jojococktail",
+        "price": "123",
+        "category": "Cocktails",
+        "description": "j"
+      },
+      {
+        "id": "hpequpxyme8lxq0o",
+        "name": "MojoMojo2",
+        "price": "123",
+        "category": "Drinks",
+        "description": "test"
+      },
+      {
+        "id": "o820iha7me9zkuur",
+        "name": "Mees speciaal",
+        "price": "5",
+        "category": "Snacks",
+        "description": "Omdat mees zo speciaal is. "
+      }
+    ]
+  },
+  "history": [
+    {
+      "heroTitle": "Snooker Pool Centrum",
+      "heroSubtitle": "Enjoy a modern pool lounge, specialty drinks, and a vibrant social scene.",
+      "infoTitle": "About Our Cafe",
+      "infoText": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "mainColor": "#00b894",
+      "accentColor": "#232526",
+      "backgroundImages": [
+        "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/12/bc/33/4e/getlstd-property-photo.jpg?w=1200&h=-1&s=1",
+        "https://images.socialdeal.nl/bedrijf/pool-cafe-hart-van-utrecht-19062608564682.jpg",
+        "https://m-en.bredastudentapp.com/uploads/image/5c8252172a5ab06d94dfcd1e-large.jpg"
+      ],
+      "logoText": "SPC - Snooker Pool Centrum Capelle a/d IJssel",
+      "navLinks": [
+        {
+          "label": "Home",
+          "path": "/"
+        },
+        {
+          "label": "Menu",
+          "path": "/menu"
+        },
+        {
+          "label": "Contact",
+          "path": "/contact"
+        }
+      ],
+      "pages": [
+        {
+          "id": "home",
+          "title": "Home",
+          "path": "/",
+          "heroTitle": "Welcome to SPC",
+          "heroSubtitle": "Enjoy a modern pool lounge, specialty drinks, and a vibrant social scene. Test",
+          "blocks": [
+            {
+              "id": "flysrhk881754991086912",
+              "type": "heading",
+              "text": "Test 2"
+            },
+            {
+              "id": "w3br9lwb51754991091806",
+              "type": "text",
+              "text": "<p>Lorem Ipsum Dollor Sit Amet TESTTESTTEST</p>"
+            },
+            {
+              "id": "s97qfpcz41755090439191",
+              "type": "divider",
+              "text": ""
+            },
+            {
+              "id": "qqh2tpr8g1755090451870",
+              "type": "quote",
+              "text": "Lorem Ipsum Dolor sit amet"
+            }
+          ]
+        },
+        {
+          "id": "contact",
+          "title": "Contact",
+          "path": "/contact",
+          "heroTitle": "Contact Us",
+          "heroSubtitle": "Contact form and info.",
+          "blocks": []
+        },
+        {
+          "id": "sehb25udi1754992544057",
+          "title": "New Page",
+          "path": "/new",
+          "blocks": [
+            {
+              "id": "id7fywqk31754992554863",
+              "type": "heading",
+              "text": "Test123"
+            },
+            {
+              "id": "dbrkxb7su1754992561264",
+              "type": "divider",
+              "text": ""
+            },
+            {
+              "id": "xp8ag08y11754992567145",
+              "type": "quote",
+              "text": "test"
+            }
+          ],
+          "heroTitle": "Test Test",
+          "heroSubtitle": "12345"
+        }
+      ],
+      "__versionMeta": {
+        "version": "2",
+        "timestamp": 1755090464898,
+        "name": "",
+        "note": ""
+      },
+      "menu": [
+        {
+          "id": "0l5zri7ime8lt89k",
+          "name": "test1",
+          "price": "222",
+          "category": "Food",
+          "description": "s"
+        },
+        {
+          "id": "gmifqh7eme8ltjde",
+          "name": "jojococktail",
+          "price": "123",
+          "category": "Cocktails",
+          "description": "j"
+        },
+        {
+          "id": "hpequpxyme8lxq0o",
+          "name": "MojoMojo2",
+          "price": "123",
+          "category": "Drinks",
+          "description": "test"
+        }
+      ]
+    },
+    {
+      "heroTitle": "Snooker Pool Centrum",
+      "heroSubtitle": "Enjoy a modern pool lounge, specialty drinks, and a vibrant social scene.",
+      "infoTitle": "About Our Cafe",
+      "infoText": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "mainColor": "#3f51b5",
+      "accentColor": "#232526",
+      "backgroundImages": [
+        "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/12/bc/33/4e/getlstd-property-photo.jpg?w=1200&h=-1&s=1",
+        "https://images.socialdeal.nl/bedrijf/pool-cafe-hart-van-utrecht-19062608564682.jpg",
+        "https://m-en.bredastudentapp.com/uploads/image/5c8252172a5ab06d94dfcd1e-large.jpg"
+      ],
+      "logoText": "SPC - Snooker Pool Centrum Capelle a/d IJssel",
+      "navLinks": [
+        {
+          "label": "Home",
+          "path": "/"
+        },
+        {
+          "label": "Menu",
+          "path": "/menu"
+        },
+        {
+          "label": "Contact",
+          "path": "/contact"
+        }
+      ],
+      "pages": [
+        {
+          "id": "home",
+          "title": "Home",
+          "path": "/",
+          "heroTitle": "Welcome to SPC",
+          "heroSubtitle": "Enjoy a modern pool lounge, specialty drinks, and a vibrant social scene. Test",
+          "blocks": [
+            {
+              "id": "flysrhk881754991086912",
+              "type": "heading",
+              "text": "Test 2"
+            },
+            {
+              "id": "w3br9lwb51754991091806",
+              "type": "text",
+              "text": "<p>Lorem Ipsum Dollor Sit Amet TESTTESTTEST</p>"
+            }
+          ]
+        },
+        {
+          "id": "contact",
+          "title": "Contact",
+          "path": "/contact",
+          "heroTitle": "Contact Us",
+          "heroSubtitle": "Contact form and info.",
+          "blocks": []
+        },
+        {
+          "id": "sehb25udi1754992544057",
+          "title": "New Page",
+          "path": "/new",
+          "blocks": [
+            {
+              "id": "id7fywqk31754992554863",
+              "type": "heading",
+              "text": "Test123"
+            },
+            {
+              "id": "dbrkxb7su1754992561264",
+              "type": "divider",
+              "text": ""
+            },
+            {
+              "id": "xp8ag08y11754992567145",
+              "type": "quote",
+              "text": "test"
+            }
+          ],
+          "heroTitle": "Test Test",
+          "heroSubtitle": "12345"
+        }
+      ],
+      "__versionMeta": {
+        "version": "1",
+        "timestamp": 1755090403852,
+        "name": "",
+        "note": ""
+      },
+      "menu": [
+        {
+          "id": "0l5zri7ime8lt89k",
+          "name": "test1",
+          "price": "222",
+          "category": "Food",
+          "description": "s"
+        },
+        {
+          "id": "gmifqh7eme8ltjde",
+          "name": "jojococktail",
+          "price": "123",
+          "category": "Cocktails",
+          "description": "j"
+        },
+        {
+          "id": "hpequpxyme8lxq0o",
+          "name": "MojoMojo2",
+          "price": "123",
+          "category": "Drinks",
+          "description": "test"
+        }
+      ]
+    }
+  ]
+}
