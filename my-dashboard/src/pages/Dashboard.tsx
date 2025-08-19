@@ -940,7 +940,7 @@ const Dashboard: React.FC = () => {
                       className="dashboard-pages-area"
                     >
                       {/* Only show pages that are not menu/contact (filter by path) */}
-                      {content.pages.filter(page => page.path !== '/menu' && page.path !== '/contact').map((page, i) => {
+                      {content.pages.filter(page => page.path !== '/menu' && page.path !== '/contact').map((page) => {
                         // Find the real index in content.pages
                         const realIdx = content.pages.findIndex(p => p.id === page.id);
                         return (
