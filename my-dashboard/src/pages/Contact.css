@@ -134,15 +134,16 @@
 }
 
 .toggle-info-btn {
+  width: auto;
   display: block;
   font-size: 1.5rem;
   color: #000000;
   border: none;
   cursor: pointer;
   text-align: center;
-  background-color: transparent;
-  width: 1rem;
+  background: transparent !important;
   align-self: center;
+  box-shadow: none !important;
 }
 
 .contact-btn {
@@ -166,6 +167,7 @@
 .contact-btn:focus {
   width: 100%;
   outline: none;
+  background: transparent !important;
 }
 
 @media (max-width: 600px) {
