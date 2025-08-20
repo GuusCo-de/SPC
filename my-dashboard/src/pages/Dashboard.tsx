@@ -92,17 +92,20 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
     setAddFields({ category: addFields.category });
   };
 
+  // Backend API URL (change here for all backend requests)
+  const BACKEND_API_URL = 'https://spc-8hcz.onrender.com';
+
   // Save menu to backend
   const saveMenu = async () => {
     setSaving(true);
     try {
       // Save to backend using /api/dashboard-content
-    const res = await fetch('https://spc-8hcz.onrender.com/api/dashboard-content');
+      const res = await fetch(`${BACKEND_API_URL}/api/dashboard-content`);
       const data = await res.json();
       const content = data.content;
       const history = data.history || [];
       const updated = { ...content, menu };
-    await fetch('https://spc-8hcz.onrender.com/api/dashboard-content', {
+      await fetch(`${BACKEND_API_URL}/api/dashboard-content`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: updated, history }),
@@ -308,7 +311,8 @@ function safeContent(raw: any): DashboardContent {
 }
 
 // --- Backend API Helpers ---
-const API_URL = 'http://localhost:4000/api/dashboard-content';
+const BACKEND_API_URL = 'https://spc-8hcz.onrender.com';
+const API_URL = `${BACKEND_API_URL}/api/dashboard-content`;
 
 type DashboardAPIResponse = {
   content: DashboardContent;

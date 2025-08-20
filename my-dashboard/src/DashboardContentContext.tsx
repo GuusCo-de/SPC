@@ -33,13 +33,16 @@ export function useDashboardContent() {
   return useContext(DashboardContentContext);
 }
 
+// Backend API URL (change here for all backend requests)
+const BACKEND_API_URL = 'https://spc-8hcz.onrender.com';
+
 export const DashboardContentProvider = ({ children }: { children: ReactNode }) => {
   const [content, setContent] = useState(defaultContent);
 
   useEffect(() => {
     async function fetchContent() {
       try {
-  const res = await fetch('https://spc-8hcz.onrender.com/api/dashboard-content');
+        const res = await fetch(`${BACKEND_API_URL}/api/dashboard-content`);
         if (!res.ok) throw new Error('Failed to fetch dashboard content');
         const data = await res.json();
         // The backend returns { content, history }, we want .content
