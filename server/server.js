@@ -64,15 +64,6 @@ app.post('/api/dashboard-content', (req, res) => {
   }
 });
 
-// Serve static files from the React app build folder
-app.use(express.static(path.join(__dirname, '../build')));
-
-// Catch-all: send back React's index.html for any non-API route
-app.get('*', (req, res) => {
-  // Only handle non-API routes
-  if (req.path.startsWith('/api/')) return res.status(404).end();
-  res.sendFile(path.join(__dirname, '../build', 'index.html'));
-});
 
 app.listen(PORT, () => {
   console.log(`Dashboard backend running on http://localhost:${PORT}`);
