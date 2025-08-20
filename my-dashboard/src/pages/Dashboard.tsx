@@ -97,12 +97,12 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
     setSaving(true);
     try {
       // Save to backend using /api/dashboard-content
-      const res = await fetch('http://localhost:4000/api/dashboard-content');
+    const res = await fetch('https://spc-8hcz.onrender.com/api/dashboard-content');
       const data = await res.json();
       const content = data.content;
       const history = data.history || [];
       const updated = { ...content, menu };
-      await fetch('http://localhost:4000/api/dashboard-content', {
+    await fetch('https://spc-8hcz.onrender.com/api/dashboard-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: updated, history }),
