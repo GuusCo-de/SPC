@@ -39,7 +39,7 @@ export const DashboardContentProvider = ({ children }: { children: ReactNode }) 
   useEffect(() => {
     async function fetchContent() {
       try {
-        const res = await fetch('http://localhost:4000/api/dashboard-content');
+  const res = await fetch('https://spc-8hcz.onrender.com/api/dashboard-content');
         if (!res.ok) throw new Error('Failed to fetch dashboard content');
         const data = await res.json();
         // The backend returns { content, history }, we want .content
