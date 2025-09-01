@@ -781,7 +781,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="dashboard-settings-section">
                 <div className="dashboard-settings-row">
-                  <label className="dashboard-settings-label">Main Color</label>
+                  <label className="dashboard-settings-label">Thema</label>
                   <div className="color-dropdown-wrapper" ref={mainColorDropdownRef}>
                     <button
                       className="color-dropdown-btn"
@@ -843,69 +843,7 @@ const Dashboard: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="dashboard-settings-row">
-                  <label className="dashboard-settings-label">Accent Color</label>
-                  <div className="color-dropdown-wrapper" ref={accentColorDropdownRef}>
-                    <button
-                      className="color-dropdown-btn"
-                      type="button"
-                      onClick={() => setAccentColorDropdownOpen(o => !o)}
-                      aria-haspopup="listbox"
-                      aria-expanded={accentColorDropdownOpen}
-                    >
-                      <span className="color-dropdown-circle" style={{ background: content.accentColor }} />
-                      <span className="color-dropdown-caret"></span>
-                    </button>
-                    {accentColorDropdownOpen && (
-                      <div className="color-dropdown-menu">
-                        <div className="color-palette-group">
-                          <div className="color-palette-label">THEME</div>
-                          <div className="color-palette-row">
-                            {THEME_COLORS.map(color => (
-                              <button
-                                key={color}
-                                className={`color-swatch${content.accentColor === color ? ' selected' : ''}`}
-                                style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
-                                onClick={() => { setAccentColorFromPalette(color); setAccentColorDropdownOpen(false); }}
-                                aria-label={`Set accent color to ${color}`}
-                              />
-                            ))}
-                          </div>
-                          <div className="color-palette-label">DEFAULT</div>
-                          <div className="color-palette-row">
-                            {DEFAULT_COLORS.map(color => (
-                              <button
-                                key={color}
-                                className={`color-swatch${content.accentColor === color ? ' selected' : ''}`}
-                                style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
-                                onClick={() => { setAccentColorFromPalette(color); setAccentColorDropdownOpen(false); }}
-                                aria-label={`Set accent color to ${color}`}
-                              />
-                            ))}
-                          </div>
-                          <div className="color-palette-label">CUSTOM</div>
-                          <div className="color-palette-row">
-                            {customColors.map(color => (
-                              <div key={color} style={{ position: 'relative' }}>
-                                <button
-                                  className={`color-swatch${content.accentColor === color ? ' selected' : ''}`}
-                                  style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
-                                  onClick={() => { setAccentColorFromPalette(color); setAccentColorDropdownOpen(false); }}
-                                  aria-label={`Set accent color to ${color}`}
-                                />
-                                <button className="color-swatch-remove" onClick={() => removeCustomColor(color)} aria-label="Remove custom color">×</button>
-                              </div>
-                            ))}
-                            <label className="color-swatch-add">
-                              +
-                              <input type="color" style={{ opacity: 0, width: 0, height: 0 }} onChange={e => addCustomColor(e.target.value)} />
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {/* Accent color removed as requested */}
               </div>
               <div className="dashboard-settings-section">
                 <h3>Background Images</h3>
