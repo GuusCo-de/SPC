@@ -174,12 +174,12 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
                   <input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggleSelect(item.id)} style={{ position: 'absolute', left: 8, top: 8 }} />
                   {editingId === item.id ? (
                     <form onSubmit={handleEditSave} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <input name="name" value={editFields.name || ''} onChange={handleEditChange} required placeholder="Name" />
-                      <input name="price" value={editFields.price || ''} onChange={e => handleEditChange({ ...e, target: { ...e.target, value: e.target.value.replace(/[^\d.]/g, '') } })} required placeholder="Price" />
-                      <input name="description" value={editFields.description || ''} onChange={handleEditChange} placeholder="Description" />
+                      <input name="name" value={editFields.name || ''} onChange={handleEditChange} required placeholder="Naam" />
+                      <input name="price" value={editFields.price || ''} onChange={e => handleEditChange({ ...e, target: { ...e.target, value: e.target.value.replace(/[^\d.]/g, '') } })} required placeholder="Prijs" />
+                      <input name="description" value={editFields.description || ''} onChange={handleEditChange} placeholder="Beschrijving" />
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <button type="submit" style={{ background: mainColor, color: '#fff', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Save</button>
-                        <button type="button" onClick={handleEditCancel} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Cancel</button>
+                        <button type="submit" style={{ background: mainColor, color: '#fff', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Opslaan</button>
+                        <button type="button" onClick={handleEditCancel} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Annuleren</button>
                       </div>
                     </form>
                   ) : (
@@ -205,16 +205,16 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
       {addPopup && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <form onSubmit={handleAddPopupSubmit} style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 48px #23252622', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <h3 style={{ color: accentColor, marginBottom: 8 }}>Add to {addPopup}</h3>
-            <input name="name" value={addFields.name || ''} onChange={e => setAddFields(f => ({ ...f, name: e.target.value }))} placeholder="Name" required style={{ minWidth: 120 }} autoFocus />
+            <h3 style={{ color: accentColor, marginBottom: 8 }}>Toevoegen aan {addPopup}</h3>
+            <input name="name" value={addFields.name || ''} onChange={e => setAddFields(f => ({ ...f, name: e.target.value }))} placeholder="Naam" required style={{ minWidth: 120 }} autoFocus />
             <input name="price" value={addFields.price || ''} onChange={e => {
               const val = e.target.value.replace(/[^\d.]/g, '');
               setAddFields(f => ({ ...f, price: val }));
-            }} placeholder="Price" required style={{ minWidth: 80 }} />
-            <input name="description" value={addFields.description || ''} onChange={e => setAddFields(f => ({ ...f, description: e.target.value }))} placeholder="Description" style={{ minWidth: 160 }} />
+            }} placeholder="Prijs" required style={{ minWidth: 80 }} />
+            <input name="description" value={addFields.description || ''} onChange={e => setAddFields(f => ({ ...f, description: e.target.value }))} placeholder="Beschrijving" style={{ minWidth: 160 }} />
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8 }}>
-              <button type="submit" style={{ background: mainColor, color: '#fff', borderRadius: 8, padding: '0.5rem 1.2rem', border: 'none', fontWeight: 600 }}>Add</button>
-              <button type="button" onClick={closeAddPopup} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.5rem 1.2rem', border: 'none', fontWeight: 600 }}>Cancel</button>
+              <button type="submit" style={{ background: mainColor, color: '#fff', borderRadius: 8, padding: '0.5rem 1.2rem', border: 'none', fontWeight: 600 }}>Toevoegen</button>
+              <button type="button" onClick={closeAddPopup} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.5rem 1.2rem', border: 'none', fontWeight: 600 }}>Annuleren</button>
             </div>
           </form>
         </div>
@@ -222,23 +222,23 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
       {/* Remove selected button */}
       {selected.length > 0 && (
         <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <button onClick={handleRemoveSelected} style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 8, padding: '0.7rem 2rem', border: 'none', fontWeight: 600, fontSize: 18 }}>Remove all selected items</button>
+          <button onClick={handleRemoveSelected} style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 8, padding: '0.7rem 2rem', border: 'none', fontWeight: 600, fontSize: 18 }}>Verwijder alle geselecteerde items</button>
         </div>
       )}
       {/* Save Button */}
       <div style={{ textAlign: 'center', marginTop: 32 }}>
         <button onClick={saveMenu} disabled={saving} style={{ background: mainColor, color: '#fff', borderRadius: 8, padding: '0.7rem 2.5rem', border: 'none', fontWeight: 700, fontSize: 20, boxShadow: '0 2px 8px #23252622', opacity: saving ? 0.7 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>
-          {saving ? 'Saving...' : 'Save'}
+          {saving ? 'Bezig met opslaan...' : 'Opslaan'}
         </button>
       </div>
       {/* Confirmation Modal */}
       {confirmRemove && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 48px #23252622', textAlign: 'center' }}>
-            <h3>Are you sure you want to remove {confirmRemove.multi ? 'all selected items' : 'this item'}?</h3>
+            <h3>Weet je zeker dat je {confirmRemove.multi ? 'alle geselecteerde items' : 'dit item'} wilt verwijderen?</h3>
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 24 }}>
-              <button onClick={confirmRemoveAction} style={{ background: '#c62828', color: '#fff', borderRadius: 8, padding: '0.5rem 2rem', border: 'none' }}>Yes, Remove</button>
-              <button onClick={() => setConfirmRemove(null)} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.5rem 2rem', border: 'none' }}>Cancel</button>
+              <button onClick={confirmRemoveAction} style={{ background: '#c62828', color: '#fff', borderRadius: 8, padding: '0.5rem 2rem', border: 'none' }}>Ja, verwijderen</button>
+              <button onClick={() => setConfirmRemove(null)} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.5rem 2rem', border: 'none' }}>Annuleren</button>
             </div>
           </div>
         </div>
@@ -758,24 +758,24 @@ const Dashboard: React.FC = () => {
     <div className="dashboard-root">
       <header>
         <img src="/Images/LogoSquare.png" alt="GuusCode Logo" />
-        <h1>GuusCode Site Builder</h1>
-        <span>Admin Dashboard</span>
+        <h1>GuusCode Site Bouwer</h1>
+        <span>Beheer Dashboard</span>
       </header>
       {/* Main dashboard navigation */}
       <nav className="dashboard-main-nav" style={{ display: 'flex', gap: 16, margin: '24px 0' }}>
-        <button className={dashboardView === 'page' ? 'active' : ''} onClick={() => setDashboardView('page')}>Page Editor</button>
-        <button className={dashboardView === 'menu' ? 'active' : ''} onClick={() => setDashboardView('menu')}>Edit Menu</button>
-        <button className={dashboardView === 'newsletter' ? 'active' : ''} onClick={() => setDashboardView('newsletter')}>Newsletter</button>
+        <button className={dashboardView === 'page' ? 'active' : ''} onClick={() => setDashboardView('page')}>Pagina Bewerken</button>
+        <button className={dashboardView === 'menu' ? 'active' : ''} onClick={() => setDashboardView('menu')}>Menu Bewerken</button>
+        <button className={dashboardView === 'newsletter' ? 'active' : ''} onClick={() => setDashboardView('newsletter')}>Nieuwsbrief</button>
       </nav>
       {/* Page Editor View */}
       {dashboardView === 'page' && (
         <>
           <div>
             <div className="dashboard-settings-card">
-              <h2>Site Settings</h2>
+              <h2>Site Instellingen</h2>
               <div className="dashboard-settings-section">
                 <label className="dashboard-settings-label">
-                  Header Text
+                  Koptekst
                   <input name="logoText" value={content.logoText} onChange={handleField} className="dashboard-settings-input" />
                 </label>
               </div>
@@ -796,7 +796,7 @@ const Dashboard: React.FC = () => {
                     {mainColorDropdownOpen && (
                       <div className="color-dropdown-menu">
                         <div className="color-palette-group">
-                          <div className="color-palette-label">THEME</div>
+                          <div className="color-palette-label">THEMA</div>
                           <div className="color-palette-row">
                             {THEME_COLORS.map(color => (
                               <button
@@ -846,7 +846,7 @@ const Dashboard: React.FC = () => {
                 {/* Accent color removed as requested */}
               </div>
               <div className="dashboard-settings-section">
-                <h3>Background Images</h3>
+                <h3>Achtergrondafbeeldingen</h3>
                 <DragDropContext onDragEnd={result => {
                   if (!result.destination) return;
                   const imgs = Array.from(content.backgroundImages);
@@ -892,7 +892,7 @@ const Dashboard: React.FC = () => {
                   title="Add Background Image"
                   type="button"
                 >
-                  Add Image
+                  Afbeelding toevoegen
                 </button>
               </div>
             </div>
