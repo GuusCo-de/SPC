@@ -400,6 +400,32 @@ const Dashboard: React.FC = () => {
     const updated = customColors.filter(c => c !== color);
     setCustomColors(updated);
   };
+
+  // Dynamically update CSS variables for main color, its RGB, and a light version
+  useEffect(() => {
+    const main = content.mainColor || '#00b894';
+    // Convert hex to RGB
+    function hexToRgb(hex: string) {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const num = parseInt(c, 16);
+      return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+    const [r, g, b] = hexToRgb(main);
+    // Lighten color for backgrounds (simple 85% blend with white)
+    function lighten([r, g, b]: number[], amt = 0.85) {
+      return [
+        Math.round(r + (255 - r) * amt),
+        Math.round(g + (255 - g) * amt),
+        Math.round(b + (255 - b) * amt),
+      ];
+    }
+    const light = lighten([r, g, b]);
+    const root = document.documentElement;
+    root.style.setProperty('--main', main);
+    root.style.setProperty('--main-rgb', `${r}, ${g}, ${b}`);
+    root.style.setProperty('--main-light', `rgb(${light[0]}, ${light[1]}, ${light[2]})`);
+  }, [content.mainColor]);
   // Add handler to select a palette color:
   const setMainColorFromPalette = (color: string) => {
     setContent(prev => ({ ...prev, mainColor: color }));
