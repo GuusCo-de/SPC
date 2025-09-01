@@ -6,7 +6,7 @@ const Navbar: React.FC = () => {
         <nav>
             <ul>
                 <li>
-                    <Link to="/">Home</Link>
+                    <Link to="/">Startpagina</Link>
                 </li>
                 <li>
                     <Link to="/menu">Menu</Link>

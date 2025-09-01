@@ -55,16 +55,16 @@ const Home: React.FC = () => {
       <section className="hero-card">
         <img
           src="/Images/8Ball.png"
-          alt="8 Ball"
+          alt="8-bal"
           className="hero-img"
         />
         <h1>{heroTitle}</h1>
         <p>
           {renderWithBreaks(heroSubtitle)}
           <br />
-          <span className="muted">Bar · WiFi · Tournamenten · Pool · Snooker</span>
+          <span className="muted">Bar · WiFi · Toernooien · Pool · Snooker</span>
         </p>
-        <a className="cta" href="#info">Meer informatie</a>
+  <a className="cta" href="#info">Meer informatie</a>
       </section>
       <section id="info" className="info-section">
         <div className="info-content">

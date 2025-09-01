@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDashboardContent } from '../DashboardContentContext';
 
-const MENU_CATEGORIES = ['Food', 'Drinks', 'Snacks', 'Cocktails', 'Desserts', 'Other'];
+const MENU_CATEGORIES = ['Eten', 'Drinken', 'Snacks', 'Cocktails', 'Desserts', 'Overig'];
 
 function priceDisplay(price: string) {
   return price ? `€${parseFloat(price).toFixed(2)}` : '';
@@ -34,7 +34,7 @@ const Menu: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div style={{ color: '#bbb', textAlign: 'center', fontStyle: 'italic' }}>No items</div>
+              <div style={{ color: '#bbb', textAlign: 'center', fontStyle: 'italic' }}>Geen items</div>
             )}
           </div>
         ))}
