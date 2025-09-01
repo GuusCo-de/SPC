@@ -12,13 +12,36 @@ const AppContent = () => {
   const images = content.backgroundImages;
   const [bgIndex, setBgIndex] = useState(0);
 
+  // Set CSS variables for main color, main-rgb, and main-light for all pages
+  useEffect(() => {
+    const main = content.mainColor || '#00b894';
+    function hexToRgb(hex: string): [number, number, number] {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map((x: string) => x + x).join('');
+      const num = parseInt(c, 16);
+      return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+    const [r, g, b] = hexToRgb(main);
+    function lighten([r, g, b]: [number, number, number], amt: number = 0.85): [number, number, number] {
+      return [
+        Math.round(r + (255 - r) * amt),
+        Math.round(g + (255 - g) * amt),
+        Math.round(b + (255 - b) * amt),
+      ];
+    }
+    const light = lighten([r, g, b]);
+    const root = document.documentElement;
+    root.style.setProperty('--main', main);
+    root.style.setProperty('--main-rgb', `${r}, ${g}, ${b}`);
+    root.style.setProperty('--main-light', `rgb(${light[0]}, ${light[1]}, ${light[2]})`);
+  }, [content.mainColor]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setBgIndex((i) => (i + 1) % images.length);
     }, 4000);
     return () => clearInterval(interval);
   }, [images.length]);
-
 
   return (
     <div className="main-bg">
@@ -35,7 +58,7 @@ const AppContent = () => {
         ))}
         <div className="bg-overlay" />
       </div>
-  <DockNav />
+      <DockNav />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
