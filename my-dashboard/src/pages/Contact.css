@@ -72,7 +72,7 @@
 }
 
 .form-group input:focus {
-  border-color: #00b894;
+  border-color: var(--main);
   outline: none;
 }
 
@@ -94,7 +94,7 @@
 }
 
 .form-group textarea:focus {
-  border-color: #00b894;
+  border-color: var(--main);
   outline: none;
 }
 
@@ -129,7 +129,7 @@
 }
 
 .contact-info a {
-  color: #00b894;
+  color: var(--main);
   text-decoration: none;
 }
 
@@ -150,7 +150,7 @@
   margin-top: 0.5rem;
   width: 50%;
   padding: 0.8rem 0;
-  background: linear-gradient(90deg, #00b894 0%, #00cec9 100%);
+  background: linear-gradient(90deg, var(--main), var(--main-dark));
   color: #fff;
   font-size: 1.1rem;
   font-weight: 700;
@@ -167,7 +167,7 @@
 .contact-btn:focus {
   width: 100%;
   outline: none;
-  background: transparent !important;
+  background: linear-gradient(90deg, var(--main-dark), var(--main)) !important;
 }
 
 @media (max-width: 600px) {

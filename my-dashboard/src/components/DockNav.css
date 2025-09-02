@@ -126,7 +126,7 @@
   background: none;
   display: block;
 }
-.dock-links.mobile a:hover { background: #00b89422; color: #00b894; }
+.dock-links.mobile a:hover { background: rgba(var(--main-rgb,0,184,148),0.13); color: var(--main); }
 /* item stagger */
 .dock-links.mobile.expanded a { opacity:0; transform: translateY(6px); animation: dockLinkIn 0.5s cubic-bezier(.4,0,.2,1) forwards; }
 @keyframes dockLinkIn { to { opacity:1; transform: translateY(0); } }

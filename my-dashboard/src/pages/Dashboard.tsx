@@ -161,14 +161,14 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
 
   return (
     <div className="dashboard-section-card" style={{ marginTop: 32, padding: 24, background: 'rgba(255,255,255,0.97)', borderRadius: 24, boxShadow: '0 8px 48px #23252622' }}>
-      <h2 style={{ color: accentColor, textAlign: 'center', marginBottom: 24 }}>Menu Editor</h2>
+  <h2 style={{ color: '#2563eb', textAlign: 'center', marginBottom: 24 }}>Menu Editor</h2>
       {/* Columns for each category */}
       <div style={{ display: 'block' }}>
         {MENU_CATEGORIES.map(cat => (
           <div key={cat} style={{ maxWidth: 480, margin: '0 auto 32px auto', background: '#f8fafc', borderRadius: 16, boxShadow: '0 2px 8px #23252611', padding: 16, position: 'relative' }}>
-            <h3 style={{ color: accentColor, borderBottom: '2px solid #eee', paddingBottom: 4, marginBottom: 12, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <h3 style={{ color: '#2563eb', borderBottom: '2px solid #eee', paddingBottom: 4, marginBottom: 12, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ flex: 1 }}>{cat}</span>
-              <button onClick={() => openAddPopup(cat)} style={{ marginLeft: 8, background: mainColor, color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, fontSize: 20, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={`Add to ${cat}`}>+</button>
+              <button onClick={() => openAddPopup(cat)} style={{ marginLeft: 8, background: '#2563eb', color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, fontSize: 20, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={`Add to ${cat}`}>+</button>
             </h3>
             {grouped[cat]?.length ? (
               grouped[cat].map(item => (
@@ -180,14 +180,14 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
                       <input name="price" value={editFields.price || ''} onChange={e => handleEditChange({ ...e, target: { ...e.target, value: e.target.value.replace(/[^\d.]/g, '') } })} required placeholder="Prijs" />
                       <input name="description" value={editFields.description || ''} onChange={handleEditChange} placeholder="Beschrijving" />
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <button type="submit" style={{ background: mainColor, color: '#fff', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Opslaan</button>
+                        <button type="submit" style={{ background: '#2563eb', color: '#fff', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Opslaan</button>
                         <button type="button" onClick={handleEditCancel} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Annuleren</button>
                       </div>
                     </form>
                   ) : (
                     <>
                       <div style={{ fontWeight: 600, fontSize: 17 }}>{item.name}</div>
-                      <div style={{ color: mainColor, fontWeight: 700 }}>{priceDisplay(item.price)}</div>
+                      <div style={{ color: '#2563eb', fontWeight: 700 }}>{priceDisplay(item.price)}</div>
                       {item.description && <div style={{ color: '#666', fontSize: 14 }}>{item.description}</div>}
                       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                         <button onClick={() => startEdit(item)} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Edit</button>
@@ -207,7 +207,7 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
       {addPopup && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <form onSubmit={handleAddPopupSubmit} style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 48px #23252622', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <h3 style={{ color: accentColor, marginBottom: 8 }}>Toevoegen aan {addPopup}</h3>
+            <h3 style={{ color: '#2563eb', marginBottom: 8 }}>Toevoegen aan {addPopup}</h3>
             <input name="name" value={addFields.name || ''} onChange={e => setAddFields(f => ({ ...f, name: e.target.value }))} placeholder="Naam" required style={{ minWidth: 120 }} autoFocus />
             <input name="price" value={addFields.price || ''} onChange={e => {
               const val = e.target.value.replace(/[^\d.]/g, '');
@@ -215,7 +215,7 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
             }} placeholder="Prijs" required style={{ minWidth: 80 }} />
             <input name="description" value={addFields.description || ''} onChange={e => setAddFields(f => ({ ...f, description: e.target.value }))} placeholder="Beschrijving" style={{ minWidth: 160 }} />
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8 }}>
-              <button type="submit" style={{ background: mainColor, color: '#fff', borderRadius: 8, padding: '0.5rem 1.2rem', border: 'none', fontWeight: 600 }}>Toevoegen</button>
+              <button type="submit" style={{ background: '#2563eb', color: '#fff', borderRadius: 8, padding: '0.5rem 1.2rem', border: 'none', fontWeight: 600 }}>Toevoegen</button>
               <button type="button" onClick={closeAddPopup} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.5rem 1.2rem', border: 'none', fontWeight: 600 }}>Annuleren</button>
             </div>
           </form>
@@ -362,7 +362,8 @@ function ensureBlockIds(content: DashboardContent): DashboardContent {
 
 const Dashboard: React.FC = () => {
   // --- Main dashboard navigation ---
-  const [dashboardView, setDashboardView] = useState<'page'|'menu'|'newsletter'>('page');
+  // View state: initial home chooser with 3 large buttons
+  const [dashboardView, setDashboardView] = useState<'home'|'page'|'menu'|'newsletter'>('home');
   // ...existing code...
   const [content, setContent] = useState<DashboardContent>(ensureBlockIds(defaultContent));
   const [selectedPage, setSelectedPage] = useState(0);
@@ -386,10 +387,15 @@ const Dashboard: React.FC = () => {
   const [justReverted, setJustReverted] = useState(false);
   // Add a ref to store the last saved content
   const lastSavedContentRef = useRef(content);
+  // Track if we are navigating back to home and need confirm
+  const [pendingLeaveToHome, setPendingLeaveToHome] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   // Add state for block delete confirmation
   const [blockToDelete, setBlockToDelete] = useState<{pageIdx: number, blockIdx: number} | null>(null);
   // Add state for custom colors:
   const [customColors, setCustomColors] = useState<string[]>(['#d500f9']);
+  // Track that initial content has loaded so we don't flag unsaved prematurely
+  const [initialLoaded, setInitialLoaded] = useState(false);
   // Add handler to add a custom color:
   const addCustomColor = (color: string) => {
     if (!customColors.includes(color)) {
@@ -478,14 +484,20 @@ const Dashboard: React.FC = () => {
     (async () => {
       try {
         const data = await fetchDashboardData();
-        setContent(ensureBlockIds(data.content));
+        const loaded = ensureBlockIds(data.content);
+        lastSavedContentRef.current = loaded; // establish baseline BEFORE marking loaded
+        setContent(loaded);
         setHistory(data.history || []);
         setActiveVersion(data.content?.__versionMeta?.version || '1');
       } catch {
-        setContent(ensureBlockIds(defaultContent));
+        const fallback = ensureBlockIds(defaultContent);
+        lastSavedContentRef.current = fallback;
+        setContent(fallback);
         setHistory([]);
         setActiveVersion('1');
       }
+      setSaveStatus('saved');
+      setInitialLoaded(true);
     })();
   }, []);
 
@@ -557,6 +569,12 @@ const Dashboard: React.FC = () => {
       setPendingVersionType(null);
       setHistory(newHistory);
       setSaveStatus('saved');
+      lastSavedContentRef.current = contentWithMeta;
+      // If we were saving as part of leaving the editor, go home afterward
+      if (pendingLeaveToHome) {
+        setPendingLeaveToHome(false);
+        setDashboardView('home');
+      }
     } catch {
       setSaveStatus('unsaved');
       alert('Failed to save. Please try again.');
@@ -850,6 +868,22 @@ const Dashboard: React.FC = () => {
   // Add state for block type selection
   const [showAddBlockMenu, setShowAddBlockMenu] = useState(false);
 
+  // Mark unsaved changes when content diverges from lastSaved snapshot
+  useEffect(() => {
+    if (!initialLoaded) return; // skip until first load done
+    if (saveStatus === 'saving') return;
+    const changed = JSON.stringify(content) !== JSON.stringify(lastSavedContentRef.current);
+    setSaveStatus(changed ? 'unsaved' : 'saved');
+  }, [content, initialLoaded, saveStatus]);
+
+  const requestBackToHome = () => {
+    if (saveStatus === 'unsaved') {
+      setShowLeaveModal(true);
+    } else {
+      setDashboardView('home');
+    }
+  };
+
   return (
     <div className="dashboard-root">
       <header>
@@ -857,12 +891,33 @@ const Dashboard: React.FC = () => {
         <h1>GuusCode Site Bouwer</h1>
         <span>Beheer Dashboard</span>
       </header>
-      {/* Main dashboard navigation */}
-      <nav className="dashboard-main-nav" style={{ display: 'flex', gap: 16, margin: '24px 0' }}>
-        <button className={dashboardView === 'page' ? 'active' : ''} onClick={() => setDashboardView('page')}>Pagina Bewerken</button>
-        <button className={dashboardView === 'menu' ? 'active' : ''} onClick={() => setDashboardView('menu')}>Menu Bewerken</button>
-        <button className={dashboardView === 'newsletter' ? 'active' : ''} onClick={() => setDashboardView('newsletter')}>Nieuwsbrief</button>
-      </nav>
+      {dashboardView === 'home' && (
+        <div className="dashboard-home-select">
+          <div className="dashboard-home-grid">
+            <button className="dashboard-home-card" onClick={() => setDashboardView('page')}>
+              <div className="dashboard-home-card-title">Pagina Bewerken</div>
+              <div className="dashboard-home-card-desc">Hero & Blocks aanpassen, achtergrond en thema.</div>
+            </button>
+            <button className="dashboard-home-card" onClick={() => setDashboardView('menu')}>
+              <div className="dashboard-home-card-title">Menu Bewerken</div>
+              <div className="dashboard-home-card-desc">Voeg gerechten & prijzen toe, bewerk categorieën.</div>
+            </button>
+            <button className="dashboard-home-card" onClick={() => setDashboardView('newsletter')}>
+              <div className="dashboard-home-card-title">Nieuwsbrief</div>
+              <div className="dashboard-home-card-desc">Nieuws items schrijven & beheren.</div>
+            </button>
+          </div>
+        </div>
+      )}
+      {dashboardView !== 'home' && (
+        <div className="dashboard-back-bar">
+          <button className="dashboard-back-btn" onClick={requestBackToHome}>← Terug</button>
+          <div className="dashboard-back-status">
+            {dashboardView === 'page' && saveStatus !== 'saved' && saveStatus !== 'saving' && <span>Niet opgeslagen wijzigingen</span>}
+            {saveStatus === 'saving' && <span>Bezig met opslaan...</span>}
+          </div>
+        </div>
+      )}
       {/* Page Editor View */}
       {dashboardView === 'page' && (
         <>
@@ -875,9 +930,10 @@ const Dashboard: React.FC = () => {
                   <input name="logoText" value={content.logoText} onChange={handleField} className="dashboard-settings-input" />
                 </label>
               </div>
+              {/* Theme color picker controls site theme (public pages) but dashboard UI stays blauw via CSS variable override */}
               <div className="dashboard-settings-section">
                 <div className="dashboard-settings-row">
-                  <label className="dashboard-settings-label">Thema</label>
+                  <label className="dashboard-settings-label">Site Thema Kleur (Dashboard blijft blauw)</label>
                   <div className="color-dropdown-wrapper" ref={mainColorDropdownRef}>
                     <button
                       className="color-dropdown-btn"
@@ -939,7 +995,6 @@ const Dashboard: React.FC = () => {
                     )}
                   </div>
                 </div>
-                {/* Accent color removed as requested */}
               </div>
               <div className="dashboard-settings-section">
                 <h3>Achtergrondafbeeldingen</h3>
@@ -1001,66 +1056,7 @@ const Dashboard: React.FC = () => {
             </div>
             <hr />
             <div>
-              <h2>Pages & Content Blocks</h2>
-              <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId="pages" type="page" direction="vertical">
-                  {(provided: DroppableProvided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className="dashboard-pages-area"
-                    >
-                      {/* Only show pages that are not menu/contact (filter by path) */}
-                      {content.pages.filter(page => page.path !== '/menu' && page.path !== '/contact').map((page) => {
-                        // Find the real index in content.pages
-                        const realIdx = content.pages.findIndex(p => p.id === page.id);
-                        return (
-                          <Draggable key={page.id} draggableId={page.id} index={realIdx}>
-                            {(prov: DraggableProvided) => (
-                              <div
-                                ref={prov.innerRef}
-                                {...prov.draggableProps}
-                                className={`dashboard-page-card${selectedPage === realIdx ? ' selected' : ''}`}
-                                onClick={() => setSelectedPage(realIdx)}
-                              >
-                                <button
-                                  {...prov.dragHandleProps}
-                                  className="dashboard-page-drag"
-                                  type="button"
-                                  tabIndex={-1}
-                                  aria-label="Drag page"
-                                  onMouseDown={() => document.activeElement instanceof HTMLElement && document.activeElement.blur()}
-                                >
-                                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect y="6" width="24" height="2.5" rx="1.25" fill="#b2b8c6"/><rect y="11" width="24" height="2.5" rx="1.25" fill="#b2b8c6"/><rect y="16" width="24" height="2.5" rx="1.25" fill="#b2b8c6"/></svg>
-                                </button>
-                                <input value={page.title} onChange={e => handlePage(realIdx, 'title', e.target.value)} />
-                                <input value={page.path} onChange={e => handlePage(realIdx, 'path', e.target.value)} />
-                                <button onClick={e => { e.stopPropagation(); removePage(realIdx); }} aria-label="Remove Page" title="Remove Page" className="dashboard-block-delete">
-                                  Remove
-                                </button>
-                              </div>
-                            )}
-                          </Draggable>
-                        );
-                      })}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-                <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                  <button
-                    onClick={addPage}
-                    aria-label="Add Page"
-                    className="dashboard-add-page-btn"
-                    title="Add Page"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="none"/>
-                      <path d="M12 7v10M7 12h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </button>
-                </div>
-                {/* Non-deletable, editable hero section for the selected page */}
+              <h2>Homepage Content</h2>
                 <section className="dashboard-hero-section">
                   <label>Hero Title</label>
                   <input
@@ -1077,7 +1073,8 @@ const Dashboard: React.FC = () => {
                     className="dashboard-hero-subtitle-input"
                   />
                 </section>
-                <h3>Blocks for: {content.pages[selectedPage]?.title}</h3>
+                <h3>Homepage Blocks</h3>
+                <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId={`blocks-${selectedPage}`} type={`block-${selectedPage}`}>
                   {(provided: DroppableProvided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps}>
@@ -1166,7 +1163,7 @@ const Dashboard: React.FC = () => {
                     </div>
                   )}
                 </Droppable>
-              </DragDropContext>
+                </DragDropContext>
             </div>
           </div>
           {/* Version bar and modals (save, history, block delete, etc.) */}
@@ -1322,6 +1319,33 @@ const Dashboard: React.FC = () => {
       {dashboardView === 'newsletter' && (
         <div className="dashboard-newsletter-editor" style={{ marginTop: 32 }}>
           <News />
+        </div>
+      )}
+      {showLeaveModal && (
+        <div className="modal">
+          <div className="modal-content" style={{ maxWidth: 420 }}>
+            <h3>Niet opgeslagen wijzigingen</h3>
+            <p>Wil je eerst opslaan voordat je teruggaat naar het hoofdmenu?</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+              <button
+                onClick={() => {
+                  setShowLeaveModal(false);
+                  setPendingLeaveToHome(true);
+                  handleSave();
+                }}
+                className="dashboard-version-btn"
+                disabled={saveStatus === 'saving'}
+              >Opslaan en Terug</button>
+              <button
+                onClick={() => {
+                  setShowLeaveModal(false);
+                  setDashboardView('home');
+                }}
+                className="dashboard-version-btn"
+              >Terug zonder opslaan</button>
+              <button onClick={() => setShowLeaveModal(false)} className="dashboard-version-btn">Annuleren</button>
+            </div>
+          </div>
         </div>
       )}
       {/* ...existing version/history modals and block delete modal... */}
