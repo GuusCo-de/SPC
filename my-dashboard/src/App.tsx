@@ -15,45 +15,54 @@ const AppContent = () => {
   const [exitAnim, setExitAnim] = useState(false); // triggers fade-out class
   const loadStartRef = useRef<number>(Date.now());
   const [progress, setProgress] = useState(0); // 0 - 100 cue fill
+  const [progressStage, setProgressStage] = useState<'breathing' | 'retract' | 'shoot' | 'done'>('breathing');
 
-  // Manage minimum display time + fade-out
+  // Handle sequence after real loading completes: wait min time, retract to 60, then shoot to 100
   useEffect(() => {
     if (!loading) {
       const elapsed = Date.now() - loadStartRef.current;
-      const remaining = 500 - elapsed; // 500ms min
+  const remaining = 1500 - elapsed; // 1500ms minimum display
       const delay = remaining > 0 ? remaining : 0;
       const t = setTimeout(() => {
-        // ensure progress hits 100 before exit
-        setProgress(100);
-        setExitAnim(true);
-        // remove after fade-out duration (350ms)
-        const t2 = setTimeout(() => setShowLoader(false), 360);
-        return () => clearTimeout(t2);
+        // Retract phase
+        setProgressStage('retract');
+        setProgress(60);
+        // After retract, shoot
+        const tShoot = setTimeout(() => {
+          setProgressStage('shoot');
+          // quick shoot to 100
+          setProgress(100);
+          // Fade out slightly after shoot reaches end
+          const tFade = setTimeout(() => {
+            setExitAnim(true);
+            const tDone = setTimeout(() => { setShowLoader(false); setProgressStage('done'); }, 360);
+            return () => clearTimeout(tDone);
+          }, 300);
+          return () => clearTimeout(tFade);
+        }, 250);
+        return () => clearTimeout(tShoot);
       }, delay);
       return () => clearTimeout(t);
     }
   }, [loading]);
 
-  // Simulated incremental progress while loading
+  // Breathing motion (50% - 80%) while loading; stops when retract begins
   useEffect(() => {
-    if (!showLoader || exitAnim) return;
-    let raf: number; let last = performance.now();
-    const tick = (now: number) => {
-      const dt = now - last; last = now;
-      setProgress(p => {
-        if (!loading) return p; // will be set to 100 in other effect
-        // Approach 90% asymptotically pre-load
-        const target = 90;
-        const speed = 0.04; // higher = faster
-        const inc = (target - p) * speed * (dt / 16.67);
-        const next = Math.min(target, p + inc);
-        return next;
-      });
-      if (showLoader && !exitAnim) raf = requestAnimationFrame(tick);
+    if (!showLoader || exitAnim || progressStage !== 'breathing') return;
+    let raf: number;
+  const base = 70; // midpoint (range target 50-90)
+  const amp = 20; // amplitude (base ± amp => 50 to 90)
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = (now - start) / 1000; // seconds
+      const value = base + Math.sin(t * 2) * amp; // 2Hz-ish breathing
+      // Only update if still in breathing stage and loading
+      if (progressStage === 'breathing' && loading) setProgress(value);
+      if (showLoader && !exitAnim && progressStage === 'breathing') raf = requestAnimationFrame(step);
     };
-    raf = requestAnimationFrame(tick);
+    raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [loading, showLoader, exitAnim]);
+  }, [loading, showLoader, exitAnim, progressStage]);
   const images = content.backgroundImages;
   const [bgIndex, setBgIndex] = useState(0);
 
