@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Menu from './pages/Menu';
@@ -10,6 +10,26 @@ import DockNav from './components/DockNav';
 
 const AppContent = () => {
   const content = useDashboardContent();
+  const loading = (content as any).__loading;
+  const [showLoader, setShowLoader] = useState(true); // controls actual visibility
+  const [exitAnim, setExitAnim] = useState(false); // triggers fade-out class
+  const loadStartRef = useRef<number>(Date.now());
+
+  // Manage minimum display time + fade-out
+  useEffect(() => {
+    if (!loading) {
+      const elapsed = Date.now() - loadStartRef.current;
+      const remaining = 500 - elapsed; // 500ms min
+      const delay = remaining > 0 ? remaining : 0;
+      const t = setTimeout(() => {
+        setExitAnim(true);
+        // remove after fade-out duration (350ms)
+        const t2 = setTimeout(() => setShowLoader(false), 360);
+        return () => clearTimeout(t2);
+      }, delay);
+      return () => clearTimeout(t);
+    }
+  }, [loading]);
   const images = content.backgroundImages;
   const [bgIndex, setBgIndex] = useState(0);
 
@@ -46,29 +66,49 @@ const AppContent = () => {
 
   return (
     <div className="main-bg">
-      {/* Background slideshow */}
-      <div className="bg-slideshow">
-        {images.map((img, i) => (
-          <img
-            key={img}
-            src={img}
-            alt=""
-            className={`bg-slide${i === bgIndex ? " active" : ""}`}
-            style={{ zIndex: i === bgIndex ? 1 : 0 }}
-          />
-        ))}
-        <div className="bg-overlay" />
-      </div>
-      <DockNav />
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/menu" element={<Menu />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/nieuws" element={<NewsPublic />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </main>
+      {!loading && (
+        <div className="bg-slideshow">
+          {images.map((img, i) => (
+            <img
+              key={img}
+              src={img}
+              alt=""
+              className={`bg-slide${i === bgIndex ? " active" : ""}`}
+              style={{ zIndex: i === bgIndex ? 1 : 0 }}
+            />
+          ))}
+          <div className="bg-overlay" />
+        </div>
+      )}
+      {showLoader && (
+        <div className={`initial-loading${exitAnim ? ' exit' : ''}`}>
+          <div className="eight-ball-wrapper">
+            <div className="eight-ball">
+              <div className="shadow" />
+              <div className="circle">
+                <div className="window">
+                  <div className="number">8</div>
+                </div>
+              </div>
+            </div>
+            <div className="loading-text">Laden...</div>
+          </div>
+        </div>
+      )}
+      {!loading && (
+        <>
+          <DockNav />
+          <main>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/menu" element={<Menu />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/nieuws" element={<NewsPublic />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Routes>
+          </main>
+        </>
+      )}
     </div>
   );
 };

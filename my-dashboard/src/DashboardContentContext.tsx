@@ -22,13 +22,17 @@ const defaultContent = {
 };
 
 function safeContent(raw: any) {
-  const c = { ...defaultContent, ...raw };
+  const c: any = { ...defaultContent, ...raw };
   if (!Array.isArray(c.backgroundImages)) c.backgroundImages = [...defaultContent.backgroundImages];
   if (!Array.isArray(c.navLinks)) c.navLinks = [...defaultContent.navLinks];
+  // Guarantee Nieuws link exists (avoid older saved content overwriting it)
+  const hasNews = c.navLinks.some((l: any) => l && (l.path === '/nieuws' || l.label?.toLowerCase() === 'nieuws'));
+  if (!hasNews) c.navLinks.push({ label: 'Nieuws', path: '/nieuws' });
   return c;
 }
 
-const DashboardContentContext = createContext(defaultContent);
+type DashboardContextType = typeof defaultContent & { __loading?: boolean };
+const DashboardContentContext = createContext<DashboardContextType>({ ...defaultContent, __loading: true });
 
 export function useDashboardContent() {
   return useContext(DashboardContentContext);
@@ -38,7 +42,7 @@ export function useDashboardContent() {
 const BACKEND_API_URL = 'https://spc-8hcz.onrender.com';
 
 export const DashboardContentProvider = ({ children }: { children: ReactNode }) => {
-  const [content, setContent] = useState(defaultContent);
+  const [content, setContent] = useState<DashboardContextType>({ ...defaultContent, __loading: true });
 
   useEffect(() => {
     async function fetchContent() {
@@ -47,9 +51,9 @@ export const DashboardContentProvider = ({ children }: { children: ReactNode }) 
         if (!res.ok) throw new Error('Failed to fetch dashboard content');
         const data = await res.json();
         // The backend returns { content, history }, we want .content
-        setContent(safeContent(data.content));
+  setContent({ ...safeContent(data.content), __loading: false });
       } catch {
-        setContent(defaultContent);
+  setContent({ ...defaultContent, __loading: false });
       }
     }
     fetchContent();
