@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import News from './News';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import type { DropResult, DraggableProvided, DroppableProvided } from 'react-beautiful-dnd';
 import "./Dashboard.css";
@@ -1217,9 +1218,8 @@ const Dashboard: React.FC = () => {
       )}
       {/* Newsletter View */}
       {dashboardView === 'newsletter' && (
-        <div className="dashboard-newsletter-editor">
-          <h2>Newsletter</h2>
-          <p>This is a placeholder for newsletter management.</p>
+        <div className="dashboard-newsletter-editor" style={{ marginTop: 32 }}>
+          <News />
         </div>
       )}
       {/* ...existing version/history modals and block delete modal... */}

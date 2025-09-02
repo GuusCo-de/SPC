@@ -16,7 +16,8 @@ const defaultContent = {
   navLinks: [
     { label: 'Home', path: '/' },
     { label: 'Menu', path: '/menu' },
-    { label: 'Contact', path: '/contact' },
+  { label: 'Contact', path: '/contact' },
+  { label: 'Nieuws', path: '/nieuws' },
   ],
 };
 

@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Menu from './pages/Menu';
 import Contact from './pages/Contact';
 import Dashboard from './pages/Dashboard';
+import NewsPublic from './pages/NewsPublic';
 import { DashboardContentProvider, useDashboardContent } from './DashboardContentContext';
 import DockNav from './components/DockNav';
 
@@ -64,6 +65,7 @@ const AppContent = () => {
           <Route path="/" element={<Home />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/nieuws" element={<NewsPublic />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </main>
