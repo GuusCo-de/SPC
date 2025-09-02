@@ -55,11 +55,12 @@ const MENU_CATEGORY_LABELS: Record<string,string> = {
   Other: 'Overig'
 };
 
-function MenuPanel({ menu, onChange, mainColor, accentColor }: {
+function MenuPanel({ menu, onChange, mainColor, accentColor, hideTitle }: {
   menu: MenuItem[];
   onChange: (menu: MenuItem[]) => void;
   mainColor: string;
   accentColor: string;
+  hideTitle?: boolean;
 }) {
   const [addFields, setAddFields] = React.useState<Partial<MenuItem>>({ category: MENU_CATEGORIES[0] });
   const [addPopup, setAddPopup] = React.useState<string | null>(null); // category or null
@@ -169,7 +170,7 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
 
   return (
     <div className="menu-editor" data-color={mainColor}>
-      <h2 className="menu-editor-title">Menu Editor</h2>
+  {!hideTitle && <h2 className="menu-editor-title">Menu Editor</h2>}
       <div className="menu-categories">
         {MENU_CATEGORIES.map(cat => (
           <div key={cat} className="menu-category">
@@ -397,6 +398,8 @@ const Dashboard: React.FC = () => {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   // Add state for block delete confirmation
   const [blockToDelete, setBlockToDelete] = useState<{pageIdx: number, blockIdx: number} | null>(null);
+  // Clear all history confirmation
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
   // Add state for custom colors:
   const [customColors, setCustomColors] = useState<string[]>(['#d500f9']);
   // Track that initial content has loaded so we don't flag unsaved prematurely
@@ -457,13 +460,20 @@ const Dashboard: React.FC = () => {
   const mainColorDropdownRef = useRef<HTMLDivElement>(null);
   const accentColorDropdownRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    if (mainColorDropdownOpen) {
+      document.body.classList.add('color-modal-active');
+    } else {
+      document.body.classList.remove('color-modal-active');
+    }
+  }, [mainColorDropdownOpen]);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
         mainColorDropdownRef.current &&
-        !mainColorDropdownRef.current.contains(event.target as Node)
-      ) {
-        setMainColorDropdownOpen(false);
-      }
+        !mainColorDropdownRef.current.contains(event.target as Node) &&
+        !(event.target as HTMLElement).closest('.color-modal')
+      ) setMainColorDropdownOpen(false);
       if (
         accentColorDropdownRef.current &&
         !accentColorDropdownRef.current.contains(event.target as Node)
@@ -889,6 +899,38 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Overflow toolbar condense for markdown + quill on small screens
+  useEffect(() => {
+    const condense = () => {
+      if (window.innerWidth > 760) return; // only condense on small screens
+      const processToolbar = (toolbar: HTMLElement, hideCount: number) => {
+        if (toolbar.querySelector('.ql-overflow-toggle')) return;
+        const buttons = Array.from(toolbar.querySelectorAll('button'));
+        if (buttons.length <= hideCount + 2) return;
+        const overflowItems = buttons.slice(-hideCount);
+        const menu = document.createElement('div');
+        menu.className = 'ql-overflow-menu';
+        overflowItems.forEach(b => menu.appendChild(b));
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'ql-overflow-toggle';
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
+        toggle.onclick = () => {
+          const open = menu.classList.toggle('open');
+          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        toolbar.appendChild(toggle);
+        toolbar.appendChild(menu);
+      };
+      document.querySelectorAll('.dashboard-block-textarea .ql-toolbar').forEach(tb => processToolbar(tb as HTMLElement, 3));
+      document.querySelectorAll('.dashboard-format-toolbar-embedded').forEach(tb => processToolbar(tb as HTMLElement, 4));
+    };
+    condense();
+    window.addEventListener('resize', condense);
+    return () => window.removeEventListener('resize', condense);
+  }, [selectedPage, content.pages[selectedPage]?.blocks.length]);
+
   return (
     <div className="dashboard-root">
       <header>
@@ -924,11 +966,21 @@ const Dashboard: React.FC = () => {
         </div>
       )}
       {dashboardView !== 'home' && (
-        <div className="dashboard-back-bar">
-          <button className="dashboard-back-btn" aria-label="Terug" onClick={requestBackToHome} />
-          <div className="dashboard-back-status">
-            {dashboardView === 'page' && saveStatus !== 'saved' && saveStatus !== 'saving' && <span>Niet opgeslagen wijzigingen</span>}
-            {saveStatus === 'saving' && <span>Bezig met opslaan...</span>}
+  <div className="editor-bar editor-bar-horizontal">
+          <h2 className="editor-bar-title">
+            {dashboardView === 'page' && 'Pagina Editor'}
+            {dashboardView === 'menu' && 'Menu Editor'}
+            {dashboardView === 'newsletter' && 'Nieuws Editor'}
+          </h2>
+          <div className="editor-bar-right">
+            {dashboardView === 'page' && saveStatus !== 'saved' && saveStatus !== 'saving' && (
+              <span className="editor-unsaved-pill">Niet opgeslagen</span>
+            )}
+            {saveStatus === 'saving' && <span className="editor-saving-pill">Opslaan...</span>}
+            <button className="editor-back-btn" aria-label="Terug" onClick={requestBackToHome}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              <span>Terug</span>
+            </button>
           </div>
         </div>
       )}
@@ -952,61 +1004,14 @@ const Dashboard: React.FC = () => {
                     <button
                       className="color-dropdown-btn"
                       type="button"
-                      onClick={() => setMainColorDropdownOpen(o => !o)}
-                      aria-haspopup="listbox"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMainColorDropdownOpen(true); }}
+                      aria-haspopup="dialog"
                       aria-expanded={mainColorDropdownOpen}
                     >
                       <span className="color-dropdown-circle" style={{ background: content.mainColor }} />
                       <span className="color-dropdown-caret"></span>
                     </button>
-                    {mainColorDropdownOpen && (
-                      <div className="color-dropdown-menu">
-                        <div className="color-palette-group">
-                          <div className="color-palette-label">THEMA</div>
-                          <div className="color-palette-row">
-                            {THEME_COLORS.map(color => (
-                              <button
-                                key={color}
-                                className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
-                                style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
-                                onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
-                                aria-label={`Set main color to ${color}`}
-                              />
-                            ))}
-                          </div>
-                          <div className="color-palette-label">DEFAULT</div>
-                          <div className="color-palette-row">
-                            {DEFAULT_COLORS.map(color => (
-                              <button
-                                key={color}
-                                className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
-                                style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
-                                onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
-                                aria-label={`Set main color to ${color}`}
-                              />
-                            ))}
-                          </div>
-                          <div className="color-palette-label">CUSTOM</div>
-                          <div className="color-palette-row">
-                            {customColors.map(color => (
-                              <div key={color} style={{ position: 'relative' }}>
-                                <button
-                                  className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
-                                  style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
-                                  onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
-                                  aria-label={`Set main color to ${color}`}
-                                />
-                                <button className="color-swatch-remove" onClick={() => removeCustomColor(color)} aria-label="Remove custom color">×</button>
-                              </div>
-                            ))}
-                            <label className="color-swatch-add">
-                              +
-                              <input type="color" style={{ opacity: 0, width: 0, height: 0 }} onChange={e => addCustomColor(e.target.value)} />
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {/* Color popup overlay rendered at root when open */}
                   </div>
                 </div>
               </div>
@@ -1125,7 +1130,10 @@ const Dashboard: React.FC = () => {
                                   aria-label="Verwijder blok"
                                   onClick={() => setBlockToDelete({ pageIdx: selectedPage, blockIdx: j })}
                                 >
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6v12"/><path d="M16 6v12"/><path d="M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"/><path d="M9 6V4h6v2"/></svg>
+                                  <svg className="trash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <g className="trash-lid"><path d="M9 6V4h6v2"/></g>
+                                    <g className="trash-body"><path d="M3 6h18"/><path d="M8 6v12"/><path d="M16 6v12"/><path d="M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"/></g>
+                                  </svg>
                                 </button>
                               </div>
                               {block.type === 'heading' ? (
@@ -1183,21 +1191,17 @@ const Dashboard: React.FC = () => {
           {/* Version bar and modals (save, history, block delete, etc.) */}
           <div className="dashboard-version-bar page-version-bar">
             <button onClick={() => setShowVersionModal(true)} disabled={saveStatus === 'saving'} className="btn primary">
-              {saveStatus === 'saving' ? 'Saving...' : 'Save Version'}
+              {saveStatus === 'saving' ? 'Opslaan...' : 'Opslaan'}
             </button>
-            <span className="dashboard-version-status pill-status" data-state={saveStatus}>
-              {saveStatus === 'saved' ? 'Saved' : saveStatus === 'unsaved' ? 'Unsaved' : 'Saving...'}
-            </span>
-            <span className="dashboard-version-current-label">v{activeVersion}</span>
             <button onClick={() => setShowHistory(h => !h)} className="btn subtle">
-              {showHistory ? 'Hide History' : 'Show History'}
+              {showHistory ? 'Verberg Geschiedenis' : 'Toon Geschiedenis'}
             </button>
           </div>
           {showHistory && (
             <div className="dashboard-version-history version-history-panel">
               <div className="version-history-head">
-                <h4 className="version-history-title">Version History</h4>
-                <button onClick={() => { handleClearHistory(); setShowHistory(false); }} className="btn danger subtle">Clear All</button>
+                <h4 className="version-history-title">Versie Geschiedenis</h4>
+                <button onClick={() => setShowClearAllConfirm(true)} className="btn danger subtle">Alles verwijderen</button>
               </div>
               <div>
                 {history.map((h, i) => {
@@ -1205,16 +1209,16 @@ const Dashboard: React.FC = () => {
                   const isActive = v === activeVersion;
                   return (
                     <React.Fragment key={v}>
-                      <div className={`dashboard-version-row version-row-modern${isActive ? ' dashboard-version-current' : ''}`}> 
+                      <div className={`dashboard-version-row version-row-modern${isActive ? ' dashboard-version-current' : ''}`}>
                         <div className="dashboard-version-info">
                           <span className="dashboard-version-dot">{isActive ? '●' : '○'}</span>
                           <span className="dashboard-version-number">v{v}</span>
                           {h.__versionMeta?.name && <span className="dashboard-version-name">{h.__versionMeta.name}</span>}
                         </div>
                         <div className="dashboard-version-actions version-actions-modern">
-                          <button onClick={() => { handleRevert(h); setShowHistory(false); }} className="btn primary">Revert</button>
-                          <button onClick={() => handleDeleteVersion(i)} className="btn danger subtle">Delete</button>
-                          <button onClick={() => openEditNoteModal(i)} className="btn subtle">Note</button>
+                          <button onClick={() => { handleRevert(h); setShowHistory(false); }} className="btn primary">Terugzetten</button>
+                          <button onClick={() => handleDeleteVersion(i)} className="btn danger subtle">Verwijder</button>
+                          <button onClick={() => openEditNoteModal(i)} className="btn subtle">Notitie</button>
                         </div>
                         <div className="dashboard-version-timestamp">
                           {h.__versionMeta?.timestamp ? new Date(h.__versionMeta.timestamp).toLocaleString() : ''}
@@ -1227,44 +1231,13 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           )}
-          {showVersionModal && (
+          {showNoteModal && noteModalContent && (
             <div className="modal modern-modal">
               <div className="modal-content modern-modal-content">
-                <h3>New Version</h3>
-                <label>
-                  Version Title (optional):
-                  <input value={versionName} onChange={e => setVersionName(e.target.value)} />
-                </label>
-                <label>
-                  Version Note (optional):
-                  <textarea value={versionNote} onChange={e => setVersionNote(e.target.value)} />
-                </label>
+                <h3>Notitie voor v{noteModalContent.version}{noteModalContent.title ? `: ${noteModalContent.title}` : ''}</h3>
+                <div>{noteModalContent.note || <span>(Geen notitie)</span>}</div>
                 <div className="modal-actions">
-                  <button onClick={handleSave} className="btn primary">Save Version</button>
-                  <button onClick={() => { setShowVersionModal(false); setVersionName(''); setVersionNote(''); setPendingVersionType(null); }} className="btn subtle">Cancel</button>
-                </div>
-              </div>
-            </div>
-          )}
-          {deleteConfirmIdx !== null && (
-            <div>
-              <div>
-                <h3>Confirm Delete</h3>
-                <p>Are you sure you want to delete this version? This cannot be undone.</p>
-                <div>
-                  <button onClick={confirmDelete}>Yes, Delete</button>
-                  <button onClick={cancelDelete}>Cancel</button>
-                </div>
-              </div>
-            </div>
-          )}
-          {showNoteModal && noteModalContent && (
-            <div>
-              <div>
-                <h3>Note for v{noteModalContent.version}{noteModalContent.title ? `: ${noteModalContent.title}` : ''}</h3>
-                <div>{noteModalContent.note || <span>(No note provided)</span>}</div>
-                <div>
-                  <button onClick={closeNoteModal}>Close</button>
+                  <button onClick={closeNoteModal} className="btn primary">Sluiten</button>
                 </div>
               </div>
             </div>
@@ -1292,8 +1265,8 @@ const Dashboard: React.FC = () => {
           {blockToDelete && (
             <div className="modal modern-modal">
               <div className="modal-content modern-modal-content">
-                <h3>Delete Block</h3>
-                <p>Are you sure you want to delete this block?</p>
+                <h3>Blok Verwijderen</h3>
+                <p>Weet je zeker dat je dit blok wilt verwijderen?</p>
                 <div className="modal-actions">
                   <button
                     className="btn danger"
@@ -1302,9 +1275,9 @@ const Dashboard: React.FC = () => {
                       setBlockToDelete(null);
                     }}
                   >
-                    Delete
+                    Verwijder
                   </button>
-                  <button className="btn subtle" onClick={() => setBlockToDelete(null)}>Cancel</button>
+                  <button className="btn subtle" onClick={() => setBlockToDelete(null)}>Annuleren</button>
                 </div>
               </div>
             </div>
@@ -1318,12 +1291,25 @@ const Dashboard: React.FC = () => {
           onChange={menu => setContent(prev => ({ ...prev, menu }))}
           mainColor={content.mainColor}
           accentColor={content.accentColor}
+          hideTitle
         />
       )}
       {/* Newsletter View */}
       {dashboardView === 'newsletter' && (
         <div className="dashboard-newsletter-editor" style={{ marginTop: 32 }}>
           <News />
+        </div>
+      )}
+      {showClearAllConfirm && (
+        <div className="modal modern-modal">
+          <div className="modal-content modern-modal-content">
+            <h3>Alle Versies Verwijderen</h3>
+            <p>Weet je zeker dat je alle geschiedenis wilt verwijderen? Alleen de huidige versie blijft als v1.</p>
+            <div className="modal-actions">
+              <button onClick={() => { handleClearHistory(); setShowClearAllConfirm(false); setShowHistory(false); }} className="btn danger">Ja, alles verwijderen</button>
+              <button onClick={() => setShowClearAllConfirm(false)} className="btn subtle">Annuleren</button>
+            </div>
+          </div>
         </div>
       )}
       {showLeaveModal && (
@@ -1349,6 +1335,62 @@ const Dashboard: React.FC = () => {
                 className="dashboard-version-btn"
               >Terug zonder opslaan</button>
               <button onClick={() => setShowLeaveModal(false)} className="dashboard-version-btn">Annuleren</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {mainColorDropdownOpen && (
+        <div className="color-modal-overlay" role="dialog" aria-modal="true" onMouseDown={e => {
+          if (!(e.target as HTMLElement).closest('.color-modal')) setMainColorDropdownOpen(false);
+        }}>
+          <div className="color-modal" role="document">
+            <div className="color-modal-head">
+              <h4>Kies Thema Kleur</h4>
+              <button type="button" className="color-modal-close" aria-label="Sluiten" onClick={() => setMainColorDropdownOpen(false)}>×</button>
+            </div>
+            <div className="color-palette-group">
+              <div className="color-palette-label">THEMA</div>
+              <div className="color-palette-row">
+                {THEME_COLORS.map(color => (
+                  <button
+                    key={color}
+                    className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
+                    style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
+                    onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
+                    aria-label={`Stel hoofdkleur in op ${color}`}
+                  />
+                ))}
+              </div>
+              <div className="color-palette-label">DEFAULT</div>
+              <div className="color-palette-row">
+                {DEFAULT_COLORS.map(color => (
+                  <button
+                    key={color}
+                    className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
+                    style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
+                    onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
+                    aria-label={`Stel hoofdkleur in op ${color}`}
+                  />
+                ))}
+              </div>
+              <div className="color-palette-label">CUSTOM</div>
+              <div className="color-palette-row">
+                {customColors.map(color => (
+                  <div key={color} style={{ position: 'relative' }}>
+                    <button
+                      className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
+                      style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
+                      onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
+                      aria-label={`Stel hoofdkleur in op ${color}`}
+                    />
+                    <button className="color-swatch-remove" onClick={() => removeCustomColor(color)} aria-label="Verwijder custom kleur">×</button>
+                  </div>
+                ))}
+                <label className="color-swatch-add">
+                  +
+                  <input type="color" style={{ opacity: 0, width: 0, height: 0 }} onChange={e => addCustomColor(e.target.value)} />
+                </label>
+              </div>
             </div>
           </div>
         </div>

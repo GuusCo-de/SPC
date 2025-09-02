@@ -102,19 +102,38 @@ const News: React.FC = () => {
           <label className="news-label">Titel
             <input className="news-input" value={title} onChange={e => setTitle(e.target.value)} required placeholder="Titel" />
           </label>
-          <div className="news-radio-row">
-            <label className="news-radio"><input type="radio" name="imgSize" checked={!bigImage} onChange={() => setBigImage(false)} /> Klein</label>
-            <label className="news-radio"><input type="radio" name="imgSize" checked={bigImage} onChange={() => setBigImage(true)} /> Groot (volle breedte / meerdere)</label>
+          <div className="news-toggle-row">
+            <span className="news-toggle-label">Groote afbeelding(en)</span>
+            <div
+              role="switch"
+              aria-checked={bigImage}
+              tabIndex={0}
+              className="toggle"
+              data-on={bigImage}
+              onClick={() => setBigImage(b => !b)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setBigImage(b => !b); } }}
+            />
           </div>
-            <label className="news-label">Afbeeldingen uploaden {bigImage ? '(meerdere mogelijk)' : '(één)'}
-              <input ref={fileInputRef} className="news-file" type="file" accept="image/*" multiple={bigImage} onChange={e => {
+          <div className="news-upload" onClick={() => fileInputRef.current?.click()}>
+            <div className="news-upload-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="26" height="26" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>
+            </div>
+            <div style={{fontSize:'.85rem', fontWeight:600, letterSpacing:'.5px', color:'#334155'}}>Upload {bigImage ? '1 of meer afbeelding(en)' : 'afbeelding'}</div>
+            <div style={{fontSize:'.7rem', letterSpacing:'.5px', color:'#64748b'}}>{bigImage ? 'Max 10 bestanden (grote weergave)' : 'Max 1 bestand (thumbnail)'}</div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple={bigImage}
+              onChange={e => {
                 const list = e.target.files ? Array.from(e.target.files) : [];
                 setImageFiles(list.slice(0, bigImage ? 10 : 1));
-              }} />
-            </label>
+              }}
+            />
+          </div>
           <label className="news-label">Beschrijving
             <div className="news-quill-wrapper">
-              <ReactQuill value={description} onChange={setDescription} />
+              <ReactQuill value={description} onChange={setDescription} placeholder="Schrijf hier de beschrijving..." />
             </div>
           </label>
           <div className="news-actions">
