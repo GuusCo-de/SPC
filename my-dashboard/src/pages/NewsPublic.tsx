@@ -52,17 +52,17 @@ const NewsPublic: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ padding: '90px 20px 60px 20px' }}>
-      <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-        <div style={{ background: 'rgba(255,255,255,0.96)', borderRadius: 40, padding: '48px clamp(16px,4vw,56px)', boxShadow: '0 24px 60px -10px #00000025, 0 4px 12px #00000018' }}>
-          <h1 style={{ textAlign: 'center', margin: 0, fontSize: 'clamp(2rem,5vw,3rem)', background: 'linear-gradient(90deg,var(--main,#00b894),#232526)', WebkitBackgroundClip: 'text', color: 'transparent' }}>Nieuws</h1>
-          <p style={{ textAlign: 'center', marginTop: 8, marginBottom: 32, color: '#444', fontSize: 18 }}>Blijf op de hoogte van het laatste nieuws.</p>
-          {loading && <div style={{ textAlign: 'center', padding: '30px 0', color: '#555' }}>Laden...</div>}
+    <div style={{ padding: '92px clamp(10px,4vw,36px) 72px clamp(10px,4vw,36px)' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 'min(42px,10vw)', padding: 'clamp(28px,5vw,56px) clamp(16px,4.2vw,60px)', boxShadow: '0 18px 52px -8px #0003, 0 3px 14px #0002' }}>
+          <h1 style={{ textAlign: 'center', margin: 0, fontSize: 'clamp(2.1rem,6vw,3.2rem)', background: 'linear-gradient(90deg,var(--main,#00b894),#232526)', WebkitBackgroundClip: 'text', color: 'transparent', letterSpacing: '.5px' }}>Nieuws</h1>
+          <p style={{ textAlign: 'center', marginTop: 10, marginBottom: 'clamp(22px,4vw,40px)', color: '#444', fontSize: 'clamp(15px,2.6vw,18px)', lineHeight: 1.4 }}>Blijf op de hoogte van het laatste nieuws.</p>
+          {loading && <div style={{ textAlign: 'center', padding: '30px 0', color: '#555', fontSize: 'clamp(15px,2.8vw,18px)' }}>Laden...</div>}
           {!loading && !error && posts.length === 0 && (
-            <div style={{ textAlign: 'center', color: '#777', fontStyle: 'italic' }}>Nog geen nieuwsberichten</div>
+            <div style={{ textAlign: 'center', color: '#777', fontStyle: 'italic', fontSize: 'clamp(14px,2.8vw,17px)' }}>Nog geen nieuwsberichten</div>
           )}
           {error && (
-            <div style={{ background: '#ffebee', color: '#c62828', padding: '10px 14px', borderRadius: 12, margin: '0 auto 24px', maxWidth: 640, fontSize: 14 }}>
+            <div style={{ background: '#ffebee', color: '#c62828', padding: '12px 16px', borderRadius: 14, margin: '0 auto 28px', maxWidth: 680, fontSize: 'clamp(13px,2.8vw,15px)' }}>
               Kon nieuws niet laden ({error}). Controleer of de backend (nieuws endpoints) gedeployed is.
             </div>
           )}

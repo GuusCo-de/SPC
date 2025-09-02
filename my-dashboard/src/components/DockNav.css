@@ -129,3 +129,37 @@
   background: #00b89422;
   color: #00b894;
 }
+
+/* --- Mobile Responsiveness Improvements --- */
+@media (max-width: 700px) {
+  .dock-nav {
+    width: 94vw;
+    max-width: 94vw;
+  }
+  .dock-header {
+    padding: 0.85rem 1.1rem 0.85rem 1.1rem;
+  }
+  .dock-title {
+    font-size: 1.05rem;
+    max-width: calc(100% - 58px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dock-hamburger {
+    width: 40px;
+    height: 40px;
+    margin-left: 0.5rem;
+  }
+  .dock-hamburger span {
+    width: 24px;
+    height: 4px;
+  }
+  .dock-links.mobile a {
+    font-size: 1rem;
+    padding: 0.75rem 0;
+  }
+}
+@media (max-width: 480px) {
+  .dock-title { font-size: 0.95rem; }
+  .dock-nav { top: 0.7rem; }
+}
