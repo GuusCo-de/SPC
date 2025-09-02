@@ -147,6 +147,17 @@ app.post('/api/news/upload', upload.array('images', 10), (req, res) => {
   }
 });
 
+// Generic background images upload
+app.post('/api/backgrounds/upload', upload.array('backgrounds', 15), (req, res) => {
+  try {
+    const files = req.files || [];
+    const urls = Array.isArray(files) ? files.map(f => '/uploads/' + f.filename) : [];
+    res.json({ urls });
+  } catch (err) {
+    res.status(500).json({ error: 'Background upload failed', details: err.message });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Dashboard backend running on http://localhost:${PORT}`);

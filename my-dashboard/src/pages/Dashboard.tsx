@@ -93,8 +93,9 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
     setAddFields({ category: addFields.category });
   };
 
-  // Backend API URL (change here for all backend requests)
-  const BACKEND_API_URL = 'https://spc-8hcz.onrender.com';
+  // Backend API URL (prefers Vite env var, then localhost during dev, else production URL)
+  // NOTE: When using a temporary blob fallback image the upload failed; those images are NOT persisted.
+  const BACKEND_API_URL = (import.meta.env.VITE_BACKEND_URL || 'https://spc-8hcz.onrender.com').replace(/\/$/, '');
 
   // Save menu to backend
   const saveMenu = async () => {
@@ -312,7 +313,7 @@ function safeContent(raw: any): DashboardContent {
 }
 
 // --- Backend API Helpers ---
-const BACKEND_API_URL = 'https://spc-8hcz.onrender.com';
+const BACKEND_API_URL = (import.meta.env.VITE_BACKEND_URL || 'https://spc-8hcz.onrender.com').replace(/\/$/, '');
 const API_URL = `${BACKEND_API_URL}/api/dashboard-content`;
 
 type DashboardAPIResponse = {
@@ -490,10 +491,22 @@ const Dashboard: React.FC = () => {
 
   // --- Save to backend ---
   const handleSave = async () => {
+    // Strip out any temporary blob: URLs so they don't get persisted (they would break on reload)
+    const hasTemp = content.backgroundImages.some(u => u.startsWith('blob:'));
+    let cleanedContent = content;
+    if (hasTemp) {
+      cleanedContent = { ...content, backgroundImages: content.backgroundImages.filter(u => !u.startsWith('blob:')) };
+      // Update state so UI reflects removal of non-persistent images post-save
+      setContent(cleanedContent);
+      if (content.backgroundImages.length !== cleanedContent.backgroundImages.length) {
+        // Let user know we skipped temporary images
+        console.warn('Skipping temporary blob background images during save');
+      }
+    }
     setSaveStatus('saving');
     const nextVer = getNextMainVersion(history);
     const meta = { version: nextVer, timestamp: Date.now(), name: versionName || '', note: versionNote || '' };
-    const contentWithMeta = { ...content, __versionMeta: meta };
+    const contentWithMeta = { ...cleanedContent, __versionMeta: meta };
     const newHistory = [{ ...contentWithMeta }, ...history].slice(0, HISTORY_LIMIT);
     try {
       await saveDashboardData({ content: contentWithMeta, history: newHistory });
@@ -739,16 +752,58 @@ const Dashboard: React.FC = () => {
 
   // 1. Add a file input ref and upload handler at the top of the Dashboard component:
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const handleUploadImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [bgUploading, setBgUploading] = useState(false);
+  const [bgUploadError, setBgUploadError] = useState<string|null>(null);
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
-    // TODO: Replace this with real upload logic to your backend/cloud storage
-    const newImages: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const url = URL.createObjectURL(files[i]);
-      newImages.push(url);
+    if (!files || !files.length) return;
+    setBgUploading(true);
+    setBgUploadError(null);
+    let added = false;
+    try {
+      // Attempt primary backgrounds endpoint
+      const bgForm = new FormData();
+      Array.from(files).forEach(f => bgForm.append('backgrounds', f));
+      let up = await fetch(`${BACKEND_API_URL}/api/backgrounds/upload`, { method: 'POST', body: bgForm });
+      if (up.status === 404) {
+        // Fallback: try using the existing news upload endpoint (older backend deploys)
+        const newsForm = new FormData();
+        Array.from(files).forEach(f => newsForm.append('images', f));
+        const up2 = await fetch(`${BACKEND_API_URL}/api/news/upload`, { method: 'POST', body: newsForm });
+        if (up2.ok) {
+          const data2 = await up2.json();
+            const urls2: string[] = (data2.urls || []).map((u: string) => u.startsWith('http') ? u : `${BACKEND_API_URL}${u}`);
+            if (urls2.length) {
+              setContent(prev => ({ ...prev, backgroundImages: [...prev.backgroundImages, ...urls2] }));
+              added = true;
+              setBgUploadError('Achtergrond endpoint ontbreekt (404). Gebruik tijdelijk nieuws-upload route. Update backend voor definitieve oplossing.');
+            }
+        } else {
+          setBgUploadError('Upload endpoints reageren niet (status ' + up2.status + '). Tijdelijke (niet-bewaarde) weergave gebruikt.');
+        }
+      } else if (up.ok) {
+        const data = await up.json();
+        const urls: string[] = (data.urls || []).map((u: string) => u.startsWith('http') ? u : `${BACKEND_API_URL}${u}`);
+        if (urls.length) {
+          setContent(prev => ({ ...prev, backgroundImages: [...prev.backgroundImages, ...urls] }));
+          added = true;
+        }
+      } else {
+        setBgUploadError('Upload endpoint niet beschikbaar (status ' + up.status + '). Tijdelijke (niet-bewaarde) weergave gebruikt.');
+      }
+    } catch (err) {
+      console.warn('Background upload failed', err);
+      setBgUploadError('Upload mislukt. Tijdelijke (niet-bewaarde) weergave gebruikt.');
     }
-    setContent(prev => ({ ...prev, backgroundImages: [...prev.backgroundImages, ...newImages] }));
+    if (!added) {
+      // Fallback: local object URLs so user still sees images immediately
+      const fallback: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        fallback.push(URL.createObjectURL(files[i]));
+      }
+      if (fallback.length) setContent(prev => ({ ...prev, backgroundImages: [...prev.backgroundImages, ...fallback] }));
+    }
+    setBgUploading(false);
     e.target.value = '';
   };
 
@@ -859,7 +914,7 @@ const Dashboard: React.FC = () => {
                     {provided => (
                       <div className="dashboard-bgimg-gallery" ref={provided.innerRef} {...provided.droppableProps}>
                         {content.backgroundImages.map((img, i) => (
-                          <Draggable key={img} draggableId={img} index={i}>
+                          <Draggable key={img + i} draggableId={img + i} index={i}>
                             {prov => (
                               <div
                                 className="dashboard-bgimg-thumb"
@@ -868,6 +923,11 @@ const Dashboard: React.FC = () => {
                                 {...prov.dragHandleProps}
                               >
                                 <img src={img} alt="Background" />
+                                {img.startsWith('blob:') && (
+                                  <div style={{ position: 'absolute', bottom: 4, left: 4, right: 4, background: '#000a', color: '#fff', fontSize: 10, padding: '2px 4px', borderRadius: 4, textAlign: 'center' }}>
+                                    tijdelijk – niet opgeslagen
+                                  </div>
+                                )}
                                 <button className="dashboard-bgimg-remove" onClick={() => removeBgImage(i)} aria-label="Remove">×</button>
                               </div>
                             )}
@@ -895,6 +955,8 @@ const Dashboard: React.FC = () => {
                 >
                   Afbeelding toevoegen
                 </button>
+                {bgUploading && <div style={{ marginTop: 8, fontSize: 12, color: content.mainColor }}>Uploaden...</div>}
+                {bgUploadError && <div style={{ marginTop: 6, fontSize: 12, color: '#c62828' }}>{bgUploadError}</div>}
               </div>
             </div>
             <hr />
