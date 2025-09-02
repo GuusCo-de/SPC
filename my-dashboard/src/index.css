@@ -855,3 +855,29 @@ button[title]:hover::after, button[aria-label]:hover::after {
 
 /* Hide scroll while loading */
 body:has(.initial-loading) { overflow:hidden; }
+
+/* Cue stick progress */
+.cue-progress-track {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(28px,6vh,70px);
+  transform: translateX(-50%);
+  width: min(78%, 680px);
+  height: 20px;
+  border-radius: 14px;
+  background: linear-gradient(90deg,#2a2a2a,#121212);
+  box-shadow: 0 4px 18px #0009, inset 0 0 2px #fff2;
+  padding: 3px 4px 3px 4px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.cue-progress {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg,#c89a5b,#d7b074 30%,#f5e2ae 60%,#ffffff 70%,#f5e2ae 80%,#c89a5b 100%);
+  box-shadow: 0 0 0 1px #0006, 0 0 6px #f5e2ae88, inset 0 0 3px #704d1a;
+  transition: width .35s cubic-bezier(.4,0,.2,1);
+}
+.initial-loading.exit .cue-progress-track { opacity:0; transition: opacity .3s ease; }

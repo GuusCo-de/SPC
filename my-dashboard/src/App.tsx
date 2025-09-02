@@ -14,6 +14,7 @@ const AppContent = () => {
   const [showLoader, setShowLoader] = useState(true); // controls actual visibility
   const [exitAnim, setExitAnim] = useState(false); // triggers fade-out class
   const loadStartRef = useRef<number>(Date.now());
+  const [progress, setProgress] = useState(0); // 0 - 100 cue fill
 
   // Manage minimum display time + fade-out
   useEffect(() => {
@@ -22,6 +23,8 @@ const AppContent = () => {
       const remaining = 500 - elapsed; // 500ms min
       const delay = remaining > 0 ? remaining : 0;
       const t = setTimeout(() => {
+        // ensure progress hits 100 before exit
+        setProgress(100);
         setExitAnim(true);
         // remove after fade-out duration (350ms)
         const t2 = setTimeout(() => setShowLoader(false), 360);
@@ -30,6 +33,27 @@ const AppContent = () => {
       return () => clearTimeout(t);
     }
   }, [loading]);
+
+  // Simulated incremental progress while loading
+  useEffect(() => {
+    if (!showLoader || exitAnim) return;
+    let raf: number; let last = performance.now();
+    const tick = (now: number) => {
+      const dt = now - last; last = now;
+      setProgress(p => {
+        if (!loading) return p; // will be set to 100 in other effect
+        // Approach 90% asymptotically pre-load
+        const target = 90;
+        const speed = 0.04; // higher = faster
+        const inc = (target - p) * speed * (dt / 16.67);
+        const next = Math.min(target, p + inc);
+        return next;
+      });
+      if (showLoader && !exitAnim) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [loading, showLoader, exitAnim]);
   const images = content.backgroundImages;
   const [bgIndex, setBgIndex] = useState(0);
 
@@ -92,6 +116,9 @@ const AppContent = () => {
               </div>
             </div>
             <div className="loading-text">Laden...</div>
+          </div>
+          <div className="cue-progress-track" aria-label="Laden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
+            <div className="cue-progress" style={{ width: `${progress}%` }} />
           </div>
         </div>
       )}
