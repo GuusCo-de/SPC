@@ -46,6 +46,14 @@ type DashboardContent = {
 };
 // --- MenuPanel Component ---
 const MENU_CATEGORIES = ['Food', 'Drinks', 'Snacks', 'Cocktails', 'Desserts', 'Other'];
+const MENU_CATEGORY_LABELS: Record<string,string> = {
+  Food: 'Eten',
+  Drinks: 'Dranken',
+  Snacks: 'Snacks',
+  Cocktails: 'Cocktails',
+  Desserts: 'Nagerechten',
+  Other: 'Overig'
+};
 
 function MenuPanel({ menu, onChange, mainColor, accentColor }: {
   menu: MenuItem[];
@@ -160,87 +168,84 @@ function MenuPanel({ menu, onChange, mainColor, accentColor }: {
   const priceDisplay = (price: string) => price ? `€${parseFloat(price).toFixed(2)}` : '';
 
   return (
-    <div className="dashboard-section-card" style={{ marginTop: 32, padding: 24, background: 'rgba(255,255,255,0.97)', borderRadius: 24, boxShadow: '0 8px 48px #23252622' }}>
-  <h2 style={{ color: '#2563eb', textAlign: 'center', marginBottom: 24 }}>Menu Editor</h2>
-      {/* Columns for each category */}
-      <div style={{ display: 'block' }}>
+    <div className="menu-editor" data-color={mainColor}>
+      <h2 className="menu-editor-title">Menu Editor</h2>
+      <div className="menu-categories">
         {MENU_CATEGORIES.map(cat => (
-          <div key={cat} style={{ maxWidth: 480, margin: '0 auto 32px auto', background: '#f8fafc', borderRadius: 16, boxShadow: '0 2px 8px #23252611', padding: 16, position: 'relative' }}>
-            <h3 style={{ color: '#2563eb', borderBottom: '2px solid #eee', paddingBottom: 4, marginBottom: 12, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ flex: 1 }}>{cat}</span>
-              <button onClick={() => openAddPopup(cat)} style={{ marginLeft: 8, background: '#2563eb', color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, fontSize: 20, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={`Add to ${cat}`}>+</button>
-            </h3>
-            {grouped[cat]?.length ? (
-              grouped[cat].map(item => (
-                <div key={item.id} style={{ background: selected.includes(item.id) ? '#e0f7fa' : '#fff', borderRadius: 10, marginBottom: 12, padding: 12, boxShadow: '0 1px 4px #23252611', position: 'relative' }}>
-                  <input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggleSelect(item.id)} style={{ position: 'absolute', left: 8, top: 8 }} />
-                  {editingId === item.id ? (
-                    <form onSubmit={handleEditSave} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <input name="name" value={editFields.name || ''} onChange={handleEditChange} required placeholder="Naam" />
-                      <input name="price" value={editFields.price || ''} onChange={e => handleEditChange({ ...e, target: { ...e.target, value: e.target.value.replace(/[^\d.]/g, '') } })} required placeholder="Prijs" />
-                      <input name="description" value={editFields.description || ''} onChange={handleEditChange} placeholder="Beschrijving" />
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button type="submit" style={{ background: '#2563eb', color: '#fff', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Opslaan</button>
-                        <button type="button" onClick={handleEditCancel} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Annuleren</button>
+          <div key={cat} className="menu-category">
+            <div className="menu-category-header">
+              <span className="menu-category-name">{MENU_CATEGORY_LABELS[cat] || cat}</span>
+              <button onClick={() => openAddPopup(cat)} className="menu-add-item-btn modern" title={`Voeg toe aan ${MENU_CATEGORY_LABELS[cat] || cat}`}> <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> <span className="visually-hidden">Voeg toe</span></button>
+            </div>
+            <div className="menu-items">
+              {grouped[cat]?.length ? (
+                grouped[cat].map(item => (
+                  <div key={item.id} className={`menu-item${selected.includes(item.id) ? ' selected' : ''}`}>
+                    <input type="checkbox" checked={!!selected.includes(item.id)} onChange={() => toggleSelect(item.id)} className="menu-item-select" aria-label="Selecteer gerecht" />
+                    {editingId === item.id ? (
+                      <form onSubmit={handleEditSave} className="menu-item-edit-form">
+                        <input name="name" value={editFields.name || ''} onChange={handleEditChange} required placeholder="Naam" />
+                        <input name="price" value={editFields.price || ''} onChange={e => handleEditChange({ ...e, target: { ...e.target, value: e.target.value.replace(/[^\d.]/g, '') } })} required placeholder="Prijs" />
+                        <input name="description" value={editFields.description || ''} onChange={handleEditChange} placeholder="Beschrijving" />
+                        <div className="menu-item-edit-actions">
+                          <button type="submit" className="btn primary">Opslaan</button>
+                          <button type="button" onClick={handleEditCancel} className="btn subtle">Annuleren</button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="menu-item-inner">
+                        <div className="menu-item-main">
+                          <div className="menu-item-name">{item.name}</div>
+                          <div className="menu-item-price">{priceDisplay(item.price)}</div>
+                        </div>
+                        {item.description && <div className="menu-item-desc">{item.description}</div>}
+                        <div className="menu-item-actions">
+                          <button onClick={() => startEdit(item)} className="btn subtle">Edit</button>
+                          <button onClick={() => handleRemove(item.id)} className="btn danger subtle">Delete</button>
+                        </div>
                       </div>
-                    </form>
-                  ) : (
-                    <>
-                      <div style={{ fontWeight: 600, fontSize: 17 }}>{item.name}</div>
-                      <div style={{ color: '#2563eb', fontWeight: 700 }}>{priceDisplay(item.price)}</div>
-                      {item.description && <div style={{ color: '#666', fontSize: 14 }}>{item.description}</div>}
-                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                        <button onClick={() => startEdit(item)} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Edit</button>
-                        <button onClick={() => handleRemove(item.id)} style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 8, padding: '0.3rem 1rem', border: 'none' }}>Delete</button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div style={{ color: '#bbb', textAlign: 'center', fontStyle: 'italic' }}>No items</div>
-            )}
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="menu-empty">Geen items</div>
+              )}
+            </div>
           </div>
         ))}
       </div>
-      {/* Add Item Popup */}
+      {selected.length > 0 && (
+        <div className="menu-selected-bar">
+          <button onClick={handleRemoveSelected} className="btn danger">Verwijder geselecteerde ({selected.length})</button>
+        </div>
+      )}
+      <div className="menu-save-bar">
+        <button onClick={saveMenu} disabled={saving} className="btn primary large">
+          {saving ? 'Bezig met opslaan...' : 'Opslaan'}
+        </button>
+      </div>
       {addPopup && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <form onSubmit={handleAddPopupSubmit} style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 48px #23252622', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <h3 style={{ color: '#2563eb', marginBottom: 8 }}>Toevoegen aan {addPopup}</h3>
-            <input name="name" value={addFields.name || ''} onChange={e => setAddFields(f => ({ ...f, name: e.target.value }))} placeholder="Naam" required style={{ minWidth: 120 }} autoFocus />
-            <input name="price" value={addFields.price || ''} onChange={e => {
-              const val = e.target.value.replace(/[^\d.]/g, '');
-              setAddFields(f => ({ ...f, price: val }));
-            }} placeholder="Prijs" required style={{ minWidth: 80 }} />
-            <input name="description" value={addFields.description || ''} onChange={e => setAddFields(f => ({ ...f, description: e.target.value }))} placeholder="Beschrijving" style={{ minWidth: 160 }} />
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8 }}>
-              <button type="submit" style={{ background: '#2563eb', color: '#fff', borderRadius: 8, padding: '0.5rem 1.2rem', border: 'none', fontWeight: 600 }}>Toevoegen</button>
-              <button type="button" onClick={closeAddPopup} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.5rem 1.2rem', border: 'none', fontWeight: 600 }}>Annuleren</button>
+        <div className="menu-popup-overlay" role="dialog" aria-modal="true">
+          <form onSubmit={handleAddPopupSubmit} className="menu-popup">
+            <h3>Toevoegen aan {addPopup}</h3>
+            <input name="name" value={addFields.name || ''} onChange={e => setAddFields(f => ({ ...f, name: e.target.value }))} placeholder="Naam" required autoFocus />
+            <input name="price" value={addFields.price || ''} onChange={e => { const val = e.target.value.replace(/[^\d.]/g, ''); setAddFields(f => ({ ...f, price: val })); }} placeholder="Prijs" required />
+            <input name="description" value={addFields.description || ''} onChange={e => setAddFields(f => ({ ...f, description: e.target.value }))} placeholder="Beschrijving" />
+            <div className="menu-popup-actions">
+              <button type="submit" className="btn primary">Toevoegen</button>
+              <button type="button" onClick={closeAddPopup} className="btn subtle">Annuleren</button>
             </div>
           </form>
         </div>
       )}
-      {/* Remove selected button */}
-      {selected.length > 0 && (
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <button onClick={handleRemoveSelected} style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 8, padding: '0.7rem 2rem', border: 'none', fontWeight: 600, fontSize: 18 }}>Verwijder alle geselecteerde items</button>
-        </div>
-      )}
-      {/* Save Button */}
-      <div style={{ textAlign: 'center', marginTop: 32 }}>
-        <button onClick={saveMenu} disabled={saving} style={{ background: mainColor, color: '#fff', borderRadius: 8, padding: '0.7rem 2.5rem', border: 'none', fontWeight: 700, fontSize: 20, boxShadow: '0 2px 8px #23252622', opacity: saving ? 0.7 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>
-          {saving ? 'Bezig met opslaan...' : 'Opslaan'}
-        </button>
-      </div>
-      {/* Confirmation Modal */}
       {confirmRemove && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 48px #23252622', textAlign: 'center' }}>
-            <h3>Weet je zeker dat je {confirmRemove.multi ? 'alle geselecteerde items' : 'dit item'} wilt verwijderen?</h3>
-            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 24 }}>
-              <button onClick={confirmRemoveAction} style={{ background: '#c62828', color: '#fff', borderRadius: 8, padding: '0.5rem 2rem', border: 'none' }}>Ja, verwijderen</button>
-              <button onClick={() => setConfirmRemove(null)} style={{ background: '#eee', color: '#232526', borderRadius: 8, padding: '0.5rem 2rem', border: 'none' }}>Annuleren</button>
+        <div className="menu-popup-overlay" role="alertdialog" aria-modal="true">
+          <div className="menu-popup">
+            <h3>Bevestig verwijderen</h3>
+            <p>Weet je zeker dat je {confirmRemove.multi ? 'alle geselecteerde items' : 'dit item'} wilt verwijderen?</p>
+            <div className="menu-popup-actions">
+              <button onClick={confirmRemoveAction} className="btn danger">Ja, verwijderen</button>
+              <button onClick={() => setConfirmRemove(null)} className="btn subtle">Annuleren</button>
             </div>
           </div>
         </div>
@@ -895,14 +900,23 @@ const Dashboard: React.FC = () => {
         <div className="dashboard-home-select">
           <div className="dashboard-home-grid">
             <button className="dashboard-home-card" onClick={() => setDashboardView('page')}>
+              <span className="home-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 4v16"/><path d="M4 9h16"/></svg>
+              </span>
               <div className="dashboard-home-card-title">Pagina Bewerken</div>
               <div className="dashboard-home-card-desc">Hero & Blocks aanpassen, achtergrond en thema.</div>
             </button>
             <button className="dashboard-home-card" onClick={() => setDashboardView('menu')}>
+              <span className="home-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 3h16"/><path d="M4 9h16"/><path d="M4 15h10"/><path d="M4 21h6"/></svg>
+              </span>
               <div className="dashboard-home-card-title">Menu Bewerken</div>
               <div className="dashboard-home-card-desc">Voeg gerechten & prijzen toe, bewerk categorieën.</div>
             </button>
             <button className="dashboard-home-card" onClick={() => setDashboardView('newsletter')}>
+              <span className="home-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v13H5.17L4 18.17V4z"/><path d="M8 9h8"/><path d="M8 13h6"/></svg>
+              </span>
               <div className="dashboard-home-card-title">Nieuwsbrief</div>
               <div className="dashboard-home-card-desc">Nieuws items schrijven & beheren.</div>
             </button>
@@ -911,7 +925,7 @@ const Dashboard: React.FC = () => {
       )}
       {dashboardView !== 'home' && (
         <div className="dashboard-back-bar">
-          <button className="dashboard-back-btn" onClick={requestBackToHome}>← Terug</button>
+          <button className="dashboard-back-btn" aria-label="Terug" onClick={requestBackToHome} />
           <div className="dashboard-back-status">
             {dashboardView === 'page' && saveStatus !== 'saved' && saveStatus !== 'saving' && <span>Niet opgeslagen wijzigingen</span>}
             {saveStatus === 'saving' && <span>Bezig met opslaan...</span>}
@@ -921,19 +935,19 @@ const Dashboard: React.FC = () => {
       {/* Page Editor View */}
       {dashboardView === 'page' && (
         <>
-          <div>
-            <div className="dashboard-settings-card">
+          <div className="page-editor">
+            <div className="dashboard-settings-card page-settings-card">
               <h2>Site Instellingen</h2>
               <div className="dashboard-settings-section">
                 <label className="dashboard-settings-label">
                   Koptekst
-                  <input name="logoText" value={content.logoText} onChange={handleField} className="dashboard-settings-input" />
+                  <input name="logoText" maxLength={24} value={content.logoText} onChange={handleField} className="dashboard-settings-input" />
                 </label>
               </div>
               {/* Theme color picker controls site theme (public pages) but dashboard UI stays blauw via CSS variable override */}
               <div className="dashboard-settings-section">
                 <div className="dashboard-settings-row">
-                  <label className="dashboard-settings-label">Site Thema Kleur (Dashboard blijft blauw)</label>
+                  <label className="dashboard-settings-label">Thema</label>
                   <div className="color-dropdown-wrapper" ref={mainColorDropdownRef}>
                     <button
                       className="color-dropdown-btn"
@@ -1054,27 +1068,33 @@ const Dashboard: React.FC = () => {
                 {bgUploadError && <div style={{ marginTop: 6, fontSize: 12, color: '#c62828' }}>{bgUploadError}</div>}
               </div>
             </div>
-            <hr />
-            <div>
-              <h2>Homepage Content</h2>
-                <section className="dashboard-hero-section">
-                  <label>Hero Title</label>
-                  <input
-                    type="text"
-                    value={content.pages[selectedPage]?.heroTitle || ''}
-                    onChange={e => handlePage(selectedPage, 'heroTitle', e.target.value)}
-                    className="dashboard-hero-title-input"
-                  />
-                  <label>Hero Subtitle</label>
-                  <input
-                    type="text"
-                    value={content.pages[selectedPage]?.heroSubtitle || ''}
-                    onChange={e => handlePage(selectedPage, 'heroSubtitle', e.target.value)}
-                    className="dashboard-hero-subtitle-input"
-                  />
-                </section>
-                <h3>Homepage Blocks</h3>
-                <DragDropContext onDragEnd={onDragEnd}>
+            <hr className="page-section-divider" />
+            <div className="page-hero-editor">
+              <h2 className="page-section-title">Homepage Content</h2>
+              {/* Pinned hero block */}
+              <div className="dashboard-block-card block-card-modern hero-block-pinned" aria-label="Hero blok (vast)">
+                <div className="dashboard-block-header-grid">
+                  <span className="block-type-icon-badge" aria-hidden="true" style={{ cursor: 'default' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 2 3 7h7l-5.5 4.5L19 21l-7-4-7 4 2.5-7.5L2 9h7z"/></svg>
+                  </span>
+                  <span className="block-type-label">Hero</span>
+                </div>
+                <label className="hero-label"><strong>Hero Titel</strong></label>
+                <input
+                  type="text"
+                  value={content.pages[selectedPage]?.heroTitle || ''}
+                  onChange={e => handlePage(selectedPage, 'heroTitle', e.target.value)}
+                  className="dashboard-hero-title-input hero-no-bold"
+                />
+                <label className="hero-label"><strong>Hero Subtitel</strong></label>
+                <input
+                  type="text"
+                  value={content.pages[selectedPage]?.heroSubtitle || ''}
+                  onChange={e => handlePage(selectedPage, 'heroSubtitle', e.target.value)}
+                  className="dashboard-hero-subtitle-input hero-no-bold"
+                />
+              </div>
+              <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId={`blocks-${selectedPage}`} type={`block-${selectedPage}`}>
                   {(provided: DroppableProvided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps}>
@@ -1084,34 +1104,34 @@ const Dashboard: React.FC = () => {
                             <div
                               ref={prov.innerRef}
                               {...prov.draggableProps}
-                              className="dashboard-block-card"
+                              className="dashboard-block-card block-card-modern"
                             >
                               <div className="dashboard-block-header-grid">
+                                <span className="block-type-icon-badge" aria-hidden="true" {...prov.dragHandleProps} style={{ cursor: 'grab' }}>
+                                  {block.type === 'heading' && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4v16"/><path d="M18 4v16"/><path d="M6 12h12"/></svg>}
+                                  {block.type === 'text' && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h16"/><path d="M4 10h16"/><path d="M4 14h10"/><path d="M4 18h8"/></svg>}
+                                  {block.type === 'divider' && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h16"/></svg>}
+                                  {block.type === 'quote' && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 19c-1.5-2-2-4-2-6 0-3 1-5 3-7l2 2c-1.5 1.5-2 3-2 5 0 1.5.5 3 1.5 4.5L6 19Z"/><path d="M16 19c-1.5-2-2-4-2-6 0-3 1-5 3-7l2 2c-1.5 1.5-2 3-2 5 0 1.5.5 3 1.5 4.5L16 19Z"/></svg>}
+                                </span>
+                                <span className="block-type-label">
+                                  {block.type === 'heading' && 'Titel'}
+                                  {block.type === 'text' && 'Tekst'}
+                                  {block.type === 'divider' && 'Scheiding'}
+                                  {block.type === 'quote' && 'Quote'}
+                                </span>
                                 <button
-                                  {...prov.dragHandleProps}
-                                  className="dashboard-block-drag"
+                                  className="block-inline-delete"
                                   type="button"
-                                  tabIndex={-1}
-                                  aria-label="Drag block"
-                                  onMouseDown={() => document.activeElement instanceof HTMLElement && document.activeElement.blur()}
+                                  aria-label="Verwijder blok"
+                                  onClick={() => setBlockToDelete({ pageIdx: selectedPage, blockIdx: j })}
                                 >
-                                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect y="6" width="24" height="2.5" rx="1.25" fill="#b2b8c6"/><rect y="11" width="24" height="2.5" rx="1.25" fill="#b2b8c6"/><rect y="16" width="24" height="2.5" rx="1.25" fill="#b2b8c6"/></svg>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6v12"/><path d="M16 6v12"/><path d="M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"/><path d="M9 6V4h6v2"/></svg>
                                 </button>
-                                <select
-                                  value={block.type}
-                                  onChange={e => handleBlock(selectedPage, j, 'type', e.target.value)}
-                                  className="dashboard-block-type"
-                                >
-                                  <option value="heading">Heading</option>
-                                  <option value="text">Text</option>
-                                  <option value="divider">Divider</option>
-                                  <option value="quote">Quote</option>
-                                </select>
                               </div>
                               {block.type === 'heading' ? (
                                 <input value={block.text} onChange={e => handleBlock(selectedPage, j, 'text', e.target.value)} className="dashboard-block-input" />
                               ) : block.type === 'divider' ? (
-                                <hr className="dashboard-block-divider" />
+                                <div style={{height:4}} />
                               ) : block.type === 'quote' ? (
                                 <blockquote className="dashboard-block-quote">
                                   <textarea value={block.text} onChange={e => handleBlock(selectedPage, j, 'text', e.target.value)} className="dashboard-block-quote-input" placeholder="Quote..." />
@@ -1126,13 +1146,7 @@ const Dashboard: React.FC = () => {
                                   />
                                 </div>
                               )}
-                              <button
-                                className="dashboard-block-remove-btn"
-                                onClick={() => setBlockToDelete({ pageIdx: selectedPage, blockIdx: j })}
-                                type="button"
-                              >
-                                Remove
-                              </button>
+                              {/* footer removed; inline delete icon now present */}
                             </div>
                           )}
                         </Draggable>
@@ -1167,32 +1181,23 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           {/* Version bar and modals (save, history, block delete, etc.) */}
-          <div className="dashboard-version-bar">
-            <button
-              onClick={() => setShowVersionModal(true)}
-              disabled={saveStatus === 'saving'}
-              className="dashboard-version-btn"
-            >
-              Save
+          <div className="dashboard-version-bar page-version-bar">
+            <button onClick={() => setShowVersionModal(true)} disabled={saveStatus === 'saving'} className="btn primary">
+              {saveStatus === 'saving' ? 'Saving...' : 'Save Version'}
             </button>
-            <span className="dashboard-version-status">
-              {saveStatus === 'saved' ? 'Saved' : saveStatus === 'unsaved' ? 'Unsaved changes' : 'Saving...'}
+            <span className="dashboard-version-status pill-status" data-state={saveStatus}>
+              {saveStatus === 'saved' ? 'Saved' : saveStatus === 'unsaved' ? 'Unsaved' : 'Saving...'}
             </span>
-            <span className="dashboard-version-current-label">
-              Current Version: {activeVersion}
-            </span>
-            <button
-              onClick={() => setShowHistory(h => !h)}
-              className="dashboard-version-btn"
-            >
-              {showHistory ? 'Hide' : 'Show'} Version History
+            <span className="dashboard-version-current-label">v{activeVersion}</span>
+            <button onClick={() => setShowHistory(h => !h)} className="btn subtle">
+              {showHistory ? 'Hide History' : 'Show History'}
             </button>
           </div>
           {showHistory && (
-            <div className="dashboard-version-history">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <h4 style={{ margin: 0 }}>Version History</h4>
-                <button onClick={() => { handleClearHistory(); setShowHistory(false); }} className="dashboard-version-clear-btn">Clear All History</button>
+            <div className="dashboard-version-history version-history-panel">
+              <div className="version-history-head">
+                <h4 className="version-history-title">Version History</h4>
+                <button onClick={() => { handleClearHistory(); setShowHistory(false); }} className="btn danger subtle">Clear All</button>
               </div>
               <div>
                 {history.map((h, i) => {
@@ -1200,16 +1205,16 @@ const Dashboard: React.FC = () => {
                   const isActive = v === activeVersion;
                   return (
                     <React.Fragment key={v}>
-                      <div className={`dashboard-version-row${isActive ? ' dashboard-version-current' : ''}`}> 
+                      <div className={`dashboard-version-row version-row-modern${isActive ? ' dashboard-version-current' : ''}`}> 
                         <div className="dashboard-version-info">
                           <span className="dashboard-version-dot">{isActive ? '●' : '○'}</span>
                           <span className="dashboard-version-number">v{v}</span>
                           {h.__versionMeta?.name && <span className="dashboard-version-name">{h.__versionMeta.name}</span>}
                         </div>
-                        <div className="dashboard-version-actions">
-                          <button onClick={() => { handleRevert(h); setShowHistory(false); }} className="dashboard-version-btn">Revert</button>
-                          <button onClick={() => handleDeleteVersion(i)} className="dashboard-version-btn">Delete</button>
-                          <button onClick={() => openEditNoteModal(i)} className="dashboard-version-btn">Show/Edit Note</button>
+                        <div className="dashboard-version-actions version-actions-modern">
+                          <button onClick={() => { handleRevert(h); setShowHistory(false); }} className="btn primary">Revert</button>
+                          <button onClick={() => handleDeleteVersion(i)} className="btn danger subtle">Delete</button>
+                          <button onClick={() => openEditNoteModal(i)} className="btn subtle">Note</button>
                         </div>
                         <div className="dashboard-version-timestamp">
                           {h.__versionMeta?.timestamp ? new Date(h.__versionMeta.timestamp).toLocaleString() : ''}
@@ -1223,8 +1228,8 @@ const Dashboard: React.FC = () => {
             </div>
           )}
           {showVersionModal && (
-            <div className="modal">
-              <div className="modal-content">
+            <div className="modal modern-modal">
+              <div className="modal-content modern-modal-content">
                 <h3>New Version</h3>
                 <label>
                   Version Title (optional):
@@ -1234,9 +1239,9 @@ const Dashboard: React.FC = () => {
                   Version Note (optional):
                   <textarea value={versionNote} onChange={e => setVersionNote(e.target.value)} />
                 </label>
-                <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
-                  <button onClick={handleSave} className="dashboard-version-btn">Save Version</button>
-                  <button onClick={() => { setShowVersionModal(false); setVersionName(''); setVersionNote(''); setPendingVersionType(null); }} className="dashboard-version-btn">Cancel</button>
+                <div className="modal-actions">
+                  <button onClick={handleSave} className="btn primary">Save Version</button>
+                  <button onClick={() => { setShowVersionModal(false); setVersionName(''); setVersionNote(''); setPendingVersionType(null); }} className="btn subtle">Cancel</button>
                 </div>
               </div>
             </div>
@@ -1265,33 +1270,33 @@ const Dashboard: React.FC = () => {
             </div>
           )}
           {editNoteModal && (
-            <div>
-              <div>
-                <h3>Edit Note/Title for v{editNoteModal.version}</h3>
+            <div className="modal modern-modal">
+              <div className="modal-content modern-modal-content">
+                <h3>Versie notitie aanpassen v{editNoteModal.version}</h3>
                 <label>
-                  Version Title (optional):
+                  Titel (optioneel):
                   <input value={editNoteModal.name} onChange={e => setEditNoteModal(m => m ? { ...m, name: e.target.value } : m)} />
                 </label>
                 <label>
-                  Version Note (optional):
+                  Notitie (optioneel):
                   <textarea value={editNoteModal.note} onChange={e => setEditNoteModal(m => m ? { ...m, note: e.target.value } : m)} />
                 </label>
-                <div>
-                  <button onClick={saveEditNoteModal}>Save</button>
-                  <button onClick={closeEditNoteModal}>Cancel</button>
+                <div className="modal-actions">
+                  <button onClick={saveEditNoteModal} className="btn primary">Opslaan</button>
+                  <button onClick={closeEditNoteModal} className="btn subtle">Annuleren</button>
                 </div>
               </div>
             </div>
           )}
           {/* Confirmation modal for block delete */}
           {blockToDelete && (
-            <div className="modal">
-              <div className="modal-content">
+            <div className="modal modern-modal">
+              <div className="modal-content modern-modal-content">
                 <h3>Delete Block</h3>
                 <p>Are you sure you want to delete this block?</p>
-                <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+                <div className="modal-actions">
                   <button
-                    style={{ background: '#d32f2f', color: '#fff' }}
+                    className="btn danger"
                     onClick={() => {
                       removeBlock(blockToDelete.pageIdx, blockToDelete.blockIdx);
                       setBlockToDelete(null);
@@ -1299,7 +1304,7 @@ const Dashboard: React.FC = () => {
                   >
                     Delete
                   </button>
-                  <button onClick={() => setBlockToDelete(null)}>Cancel</button>
+                  <button className="btn subtle" onClick={() => setBlockToDelete(null)}>Cancel</button>
                 </div>
               </div>
             </div>
