@@ -31,10 +31,10 @@
   transform: translateY(0) scaleY(1);
   pointer-events: auto;
 }
-.dock-nav.expanded {
-  max-height: 420px;
-  box-shadow: 0 16px 48px #23252633, 0 2px 12px #23252611;
-}
+.dock-nav.expanded { max-height: 420px; box-shadow: 0 16px 48px #23252633, 0 2px 12px #23252611; }
+.dock-nav.closing { max-height: 80px; transition: max-height 0.42s cubic-bezier(.65,-0.1,.3,1), opacity 0.38s; }
+.dock-nav.closing .dock-links.mobile { opacity:0; }
+.dock-nav:not(.expanded):not(.closing) .dock-links.mobile { opacity:0; max-height:0; }
 .dock-header {
   display: flex;
   align-items: center;
@@ -108,8 +108,9 @@
   opacity: 1;
   max-height: 300px;
   pointer-events: auto;
-  transition: opacity 0.22s, max-height 0.38s cubic-bezier(.4,0,.2,1);
+  transition: opacity 0.35s cubic-bezier(.4,0,.2,1), max-height 0.4s cubic-bezier(.4,0,.2,1);
 }
+.dock-links.mobile.expanded.closing { opacity:0; }
 .dock-links.mobile a {
   color: #232526;
   font-size: 1.1rem;
@@ -125,10 +126,10 @@
   background: none;
   display: block;
 }
-.dock-links.mobile a:hover {
-  background: #00b89422;
-  color: #00b894;
-}
+.dock-links.mobile a:hover { background: #00b89422; color: #00b894; }
+/* item stagger */
+.dock-links.mobile.expanded a { opacity:0; transform: translateY(6px); animation: dockLinkIn 0.5s cubic-bezier(.4,0,.2,1) forwards; }
+@keyframes dockLinkIn { to { opacity:1; transform: translateY(0); } }
 
 /* --- Mobile Responsiveness Improvements --- */
 @media (max-width: 700px) {
@@ -163,3 +164,19 @@
   .dock-title { font-size: 0.95rem; }
   .dock-nav { top: 0.7rem; }
 }
+
+/* --- Screen Overlay when mobile menu open --- */
+.dock-screen-overlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(6px) brightness(0.85);
+  background: linear-gradient(145deg,rgba(0,0,0,0.35),rgba(0,0,0,0.55));
+  animation: dockOverlayFade 0.4s ease forwards;
+  z-index: 80; /* below nav (100) */
+  opacity: 0;
+}
+@keyframes dockOverlayFade { to { opacity: 1; } }
+
+/* fade out when removed (quick JS-less trick) */
+.dock-screen-overlay.closing { animation: dockOverlayFadeOut 0.32s ease forwards; }
+@keyframes dockOverlayFadeOut { from { opacity: 1; } to { opacity: 0; } }

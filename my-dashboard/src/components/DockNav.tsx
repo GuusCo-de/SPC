@@ -1,5 +1,5 @@
 import './DockNav.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useDashboardContent } from '../DashboardContentContext';
 
@@ -7,7 +7,9 @@ const DockNav: React.FC = () => {
   const content = useDashboardContent();
   const [showDock, setShowDock] = useState(true);
   const [lastScroll, setLastScroll] = useState(0);
-  const [mobileMenu, setMobileMenu] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false); // whether menu content is mounted
+  const [closing, setClosing] = useState(false); // animate retract phase
+  const closeTimer = useRef<number | null>(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -35,17 +37,48 @@ const DockNav: React.FC = () => {
   }, [lastScroll]);
 
   useEffect(() => {
-    setMobileMenu(false);
+    // Close menu on route change with animation
+    if (mobileMenu) handleClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
+  useEffect(() => () => { if (closeTimer.current) window.clearTimeout(closeTimer.current); }, []);
+
+  const handleOpen = () => {
+    if (closing) {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+      setClosing(false);
+    }
+    setMobileMenu(true);
+  };
+  const handleClose = () => {
+    if (!mobileMenu || closing) return;
+    setClosing(true);
+    // Duration should match CSS close animation (380ms container height + slight buffer)
+    closeTimer.current = window.setTimeout(() => {
+      setMobileMenu(false);
+      setClosing(false);
+    }, 400);
+  };
+  const toggleMenu = () => {
+    if (mobileMenu && !closing) {
+      handleClose();
+    } else if (!mobileMenu) {
+      handleOpen();
+    }
+  };
+
+  const navClass = `dock-nav${showDock ? ' show' : ' hide'}${mobileMenu && !closing ? ' expanded' : ''}${closing ? ' closing' : ''}`;
   return (
-    <div className={`dock-nav${showDock ? ' show' : ' hide'}${mobileMenu ? ' expanded' : ''}`}>
+    <>
+    {mobileMenu && <div className={`dock-screen-overlay${closing ? ' closing' : ''}`} onClick={handleClose} />}
+    <div className={navClass}>
       <div className="dock-header">
-        <div className="dock-title">{mobileMenu ? 'Pages:' : content.logoText}</div>
+        <div className="dock-title">{mobileMenu ? 'Pagina\'s:' : content.logoText}</div>
         <button
-          className={`dock-hamburger${mobileMenu ? ' open' : ''}`}
-          aria-label={mobileMenu ? 'Close menu' : 'Open menu'}
-          onClick={() => setMobileMenu((v) => !v)}
+          className={`dock-hamburger${mobileMenu && !closing ? ' open' : ''}`}
+          aria-label={mobileMenu ? 'Sluit menu' : 'Open menu'}
+          onClick={toggleMenu}
         >
           <span />
           <span />
@@ -53,12 +86,13 @@ const DockNav: React.FC = () => {
         </button>
       </div>
       {mobileMenu && (
-        <div className="dock-links mobile expanded">
+        <div className={`dock-links mobile expanded${closing ? ' closing' : ''}`}>
           {content.navLinks.map((link, idx) => (
             <Link
               key={idx}
               to={link.path}
-              onClick={() => setMobileMenu(false)}
+              onClick={handleClose}
+              style={{ animationDelay: `${Math.min(idx * 60, 600)}ms` }}
             >
               {link.label}
             </Link>
@@ -66,6 +100,7 @@ const DockNav: React.FC = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
