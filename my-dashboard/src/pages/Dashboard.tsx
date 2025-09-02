@@ -931,12 +931,20 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener('resize', condense);
   }, [selectedPage, content.pages[selectedPage]?.blocks.length]);
 
+  const pageTitle = dashboardView === 'page' ? 'Pagina Editor' : dashboardView === 'menu' ? 'Menu Editor' : dashboardView === 'newsletter' ? 'Nieuws Editor' : 'Guuscode Dashboard';
+
   return (
     <div className="dashboard-root">
-      <header>
-        <img src="/Images/LogoSquare.png" alt="GuusCode Logo" />
-        <h1>GuusCode Site Bouwer</h1>
-        <span>Beheer Dashboard</span>
+      <header className={dashboardView !== 'home' ? 'with-back' : 'home'}>
+        {dashboardView === 'home' ? (
+          <img src="/Images/LogoSquare.png" alt="GuusCode Logo" />
+        ) : (
+          <button type="button" className="header-back-btn" aria-label="Terug" onClick={requestBackToHome}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+        )}
+        <h1>{pageTitle}</h1>
+        <div className="header-spacer" />
       </header>
       {dashboardView === 'home' && (
         <div className="dashboard-home-select">
@@ -965,25 +973,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
-      {dashboardView !== 'home' && (
-  <div className="editor-bar editor-bar-horizontal">
-          <h2 className="editor-bar-title">
-            {dashboardView === 'page' && 'Pagina Editor'}
-            {dashboardView === 'menu' && 'Menu Editor'}
-            {dashboardView === 'newsletter' && 'Nieuws Editor'}
-          </h2>
-          <div className="editor-bar-right">
-            {dashboardView === 'page' && saveStatus !== 'saved' && saveStatus !== 'saving' && (
-              <span className="editor-unsaved-pill">Niet opgeslagen</span>
-            )}
-            {saveStatus === 'saving' && <span className="editor-saving-pill">Opslaan...</span>}
-            <button className="editor-back-btn" aria-label="Terug" onClick={requestBackToHome}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-              <span>Terug</span>
-            </button>
-          </div>
-        </div>
-      )}
+  {/* Removed separate editor-bar; title/back now in main header */}
       {/* Page Editor View */}
       {dashboardView === 'page' && (
         <>
