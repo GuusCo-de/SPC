@@ -735,7 +735,7 @@
   align-items: center;
 }
 
-.dashboard-root .dashboard-page-card input:focus,
+.dashboard-root .dashboard-page-card input:focus {
   border: 1.5px solid var(--main, #00b894);
   background: #fff;
   box-shadow: 0 0 0 2px rgba(var(--main-rgb, 0,184,148),0.13);
@@ -758,7 +758,7 @@
   transition: border 0.18s, box-shadow 0.18s;
 }
 
-.dashboard-root .dashboard-block-input:focus,
+.dashboard-root .dashboard-block-input:focus {
   border: 1.5px solid var(--main, #00b894);
   background: #fff;
   box-shadow: 0 0 0 2px rgba(var(--main-rgb, 0,184,148),0.13);
