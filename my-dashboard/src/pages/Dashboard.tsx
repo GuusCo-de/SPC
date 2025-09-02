@@ -491,16 +491,56 @@ const Dashboard: React.FC = () => {
 
   // --- Save to backend ---
   const handleSave = async () => {
-    // Strip out any temporary blob: URLs so they don't get persisted (they would break on reload)
-    const hasTemp = content.backgroundImages.some(u => u.startsWith('blob:'));
+    // Auto-upload any blob: temporary background images so they become persistent if possible.
     let cleanedContent = content;
-    if (hasTemp) {
-      cleanedContent = { ...content, backgroundImages: content.backgroundImages.filter(u => !u.startsWith('blob:')) };
-      // Update state so UI reflects removal of non-persistent images post-save
-      setContent(cleanedContent);
-      if (content.backgroundImages.length !== cleanedContent.backgroundImages.length) {
-        // Let user know we skipped temporary images
-        console.warn('Skipping temporary blob background images during save');
+    const blobIndices = content.backgroundImages.map((u, i) => u.startsWith('blob:') ? i : -1).filter(i => i >= 0);
+    if (blobIndices.length) {
+      try {
+        // Fetch blobs
+        const files: File[] = [];
+        for (let bi = 0; bi < blobIndices.length; bi++) {
+          const idx = blobIndices[bi];
+            const blobUrl = content.backgroundImages[idx];
+            const resp = await fetch(blobUrl);
+            const blob = await resp.blob();
+            const file = new File([blob], `bg-${Date.now()}-${bi}.png`, { type: blob.type || 'image/png' });
+            files.push(file);
+        }
+        // Try backgrounds endpoint first
+        let uploaded: string[] | null = null;
+        if (files.length) {
+          const form = new FormData();
+          files.forEach(f => form.append('backgrounds', f));
+          let r = await fetch(`${BACKEND_API_URL}/api/backgrounds/upload`, { method: 'POST', body: form });
+          if (r.status === 404) {
+            // fallback to news upload
+            const form2 = new FormData();
+            files.forEach(f => form2.append('images', f));
+            r = await fetch(`${BACKEND_API_URL}/api/news/upload`, { method: 'POST', body: form2 });
+          }
+          if (r.ok) {
+            const data = await r.json();
+            const urls: string[] = (data.urls || []).map((u: string) => u.startsWith('http') ? u : `${BACKEND_API_URL}${u}`);
+            if (urls.length === files.length) uploaded = urls;
+          }
+        }
+        if (uploaded) {
+          const newImages = [...content.backgroundImages];
+          blobIndices.forEach((origIdx, i) => { newImages[origIdx] = uploaded![i]; });
+          cleanedContent = { ...content, backgroundImages: newImages };
+          setContent(cleanedContent);
+        } else {
+          // Could not upload; remove blob images to avoid persisting invalid URLs
+          const filtered = content.backgroundImages.filter(u => !u.startsWith('blob:'));
+            cleanedContent = { ...content, backgroundImages: filtered };
+            setContent(cleanedContent);
+            console.warn('Removed temporary blob background images during save because upload failed.');
+        }
+      } catch (err) {
+        console.warn('Blob background auto-upload failed, stripping temporary images', err);
+        const filtered = content.backgroundImages.filter(u => !u.startsWith('blob:'));
+        cleanedContent = { ...content, backgroundImages: filtered };
+        setContent(cleanedContent);
       }
     }
     setSaveStatus('saving');
