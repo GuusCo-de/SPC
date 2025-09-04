@@ -51,9 +51,9 @@ const Contact: React.FC = () => {
           className={`contact-info${showInfo ? ' show' : ''}`}
         >
           <h2>Of neem contact op via:</h2>
-          <p>E-mail: <a href="mailto:info@poolcafe.com">info@poolcafe.com</a></p>
-          <p>Telefoon: <a href="tel:1234567890">(123) 456-7890</a></p>
-          <p>Adres: 123 Pool Lane, Amsterdam</p>
+          <p>E-mail: <a href="mailto:spccapelle010@gmail.com">spccapelle010@gmail.com</a></p>
+          <p>Telefoon: <a href="tel:+31104585733">010-4585733</a></p>
+          <p>Adres: Marsdiep 2, 2904 ES Capelle a/d IJssel</p>
         </div>
       </div>
     </div>

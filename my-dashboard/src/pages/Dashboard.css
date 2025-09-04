@@ -1,3 +1,13 @@
+/* Global Save Bar */
+.global-save-bar{position:fixed;bottom:18px;right:18px;display:flex;align-items:center;gap:10px;background:#101822cc;backdrop-filter:blur(8px);padding:10px 14px;border-radius:14px;box-shadow:0 4px 18px -4px rgba(0,0,0,.35);z-index:4000;animation:fadeInBar .35s ease}
+.global-save-bar.dirty{box-shadow:0 4px 20px -4px rgba(0,180,120,.55)}
+.global-save-bar.saving{opacity:.8}
+.global-save-btn{background:var(--main,#0b5bd7);color:#fff;font-weight:600;border:none;outline:none;padding:8px 18px;border-radius:10px;font-size:.9rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .25s,transform .25s}
+.global-save-btn:disabled{background:#3d4856;cursor:default}
+.global-save-btn:not(:disabled):hover{background:var(--main-light,#3c7ff1);transform:translateY(-2px)}
+.global-save-indicator{color:#27e09c;font-size:18px;line-height:1;animation:pulseDirty 1.5s ease-in-out infinite;filter:drop-shadow(0 0 4px rgba(39,224,156,.6))}
+@keyframes pulseDirty{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+@keyframes fadeInBar{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .dashboard-root {
   background: #f8fafc;
   min-height: 100vh;
@@ -1695,9 +1705,9 @@
   .home-card-icon svg { width:44px; height:44px; }
 }
 @media (max-width:800px){
-  .home-card-icon { top:16px; right:16px; bottom:auto; width:54px; height:54px; border-radius:20px; opacity:1; }
-  .home-card-icon svg { width:28px; height:28px; }
-  .dashboard-home-card:hover .home-card-icon { transform:translateY(-4px) rotate(-6deg) scale(1); box-shadow:0 14px 32px -10px rgba(var(--main-rgb,37,99,235),.55),0 0 0 4px rgba(255,255,255,.4); }
+  .home-card-icon { bottom:-2rem; right:2rem; width:100px; height:100px; border-radius:20px; opacity:1; transform:rotate(8deg) scale(1);}
+  .home-card-icon svg { width:50px; height:50px; }
+  .dashboard-home-card:hover .home-card-icon { transform:translateY(-40px) rotate(8deg) scale(1); box-shadow:0 14px 32px -10px rgba(var(--main-rgb,37,99,235),.55),0 0 0 4px rgba(255,255,255,.4); }
 }
 
 @media (max-width: 1280px) {

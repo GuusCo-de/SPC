@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import NewsPublic from './pages/NewsPublic';
 import Rules from './pages/Rules';
 import RulesAdmin from './pages/RulesAdmin';
+import Footer from './components/Footer';
 import { DashboardContentProvider, useDashboardContent } from './DashboardContentContext';
 import DockNav from './components/DockNav';
 
@@ -135,7 +136,8 @@ const AppContent = () => {
       )}
       {!loading && (
         <>
-          <DockNav />
+          {/* Verberg globale site navigatie op dashboard */}
+          {!window.location.pathname.startsWith('/dashboard') && <DockNav />}
           <main>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -147,6 +149,7 @@ const AppContent = () => {
               <Route path="/dashboard/rules" element={<RulesAdmin />} />
             </Routes>
           </main>
+          <Footer />
         </>
       )}
     </div>

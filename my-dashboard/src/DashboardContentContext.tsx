@@ -13,6 +13,27 @@ const defaultContent = {
     'https://m-en.bredastudentapp.com/uploads/image/5c8252172a5ab06d94dfcd1e-large.jpg',
   ],
   logoText: 'SPC - Snooker Pool Centrum',
+  // Opening times & rates now editable via Instellingen
+  opening: [
+    { d: 'Maandag', v: 'Gesloten' },
+    { d: 'Dinsdag', v: '18:00 – 23:00' },
+    { d: 'Woensdag', v: '13:00 – 24:00' },
+    { d: 'Donderdag', v: '13:00 – 24:00' },
+    { d: 'Vrijdag', v: '18:00 – 01:00' },
+    { d: 'Zaterdag', v: '13:00 – 01:00' },
+    { d: 'Zondag', v: '13:00 – 18:00' },
+  ],
+  rates: [
+    { label: 'Pool', price: '€15 / uur' },
+    { label: 'Snooker', price: '€15 / uur' },
+    { label: 'Biljart (groot)', price: '€10 / uur' },
+    { label: 'Biljart (klein)', price: '€8 / uur' },
+  ],
+  email: 'spccapelle010@gmail.com',
+  tel: '010-4585733',
+  kvk: '89548477',
+  address: 'Marsdiep 2, 2904 ES Capelle a/d IJssel',
+  payment: 'Pin of contant',
   navLinks: [
     { label: 'Home', path: '/' },
     { label: 'Menu', path: '/menu' },
@@ -26,6 +47,13 @@ function safeContent(raw: any) {
   const c: any = { ...defaultContent, ...raw };
   if (!Array.isArray(c.backgroundImages)) c.backgroundImages = [...defaultContent.backgroundImages];
   if (!Array.isArray(c.navLinks)) c.navLinks = [...defaultContent.navLinks];
+  if (!Array.isArray(c.opening)) c.opening = [...defaultContent.opening];
+  if (!Array.isArray(c.rates)) c.rates = [...defaultContent.rates];
+  if (typeof c.email !== 'string') c.email = defaultContent.email;
+  if (typeof c.tel !== 'string') c.tel = defaultContent.tel;
+  if (typeof c.kvk !== 'string') c.kvk = defaultContent.kvk;
+  if (typeof c.address !== 'string') c.address = defaultContent.address;
+  if (typeof c.payment !== 'string') c.payment = defaultContent.payment;
   // Guarantee Nieuws link exists (avoid older saved content overwriting it)
   const hasNews = c.navLinks.some((l: any) => l && (l.path === '/nieuws' || l.label?.toLowerCase() === 'nieuws'));
   if (!hasNews) c.navLinks.push({ label: 'Nieuws', path: '/nieuws' });

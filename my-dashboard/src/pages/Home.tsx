@@ -1,6 +1,5 @@
 import React from 'react';
 import '../index.css';
-import Pool3DSection from '../components/Pool3DSection';
 import { useDashboardContent } from '../DashboardContentContext';
 
 type Block = { id: string; type: 'heading' | 'text' | 'divider' | 'quote'; text: string };
@@ -76,7 +75,6 @@ const Home: React.FC = () => {
           )}
         </div>
       </section>
-      <Pool3DSection />
     </div>
   );
 };

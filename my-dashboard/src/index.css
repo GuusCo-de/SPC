@@ -141,10 +141,12 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center; /* center content vertically within hero viewport */
   text-align: center;
   backdrop-filter: blur(4px);
-  margin-top: 3rem; /* Remove margin-top so it's truly centered */
-  margin-bottom: 8rem; /* Add this for spacing */
+  /* Full viewport height minus the padding space added to main for nav (7rem) */
+  min-height: calc(100vh - 7rem);
+  margin: 0 auto clamp(3rem,6vh,5rem); /* bottom margin responsive, no top gap */
 }
 
 .hero-img {
@@ -257,13 +259,19 @@ nav, main, .info-section {
 /* Fullscreen info section */
 .info-section {
   width: 100vw;
-  min-height: 100vh;
+  min-height: 100vh; /* ensure footer only appears after scrolling past hero */
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg-light);
   box-shadow: 0 -4px 32px #23252611;
-  padding: 0;
+  padding: 0; /* no extra gap */
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+@media (max-height: 760px) {
+  .hero-card { min-height: calc(100vh - 7rem - 40px); padding: 2.5rem 2.2rem 2.2rem; }
 }
 
 .info-content {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import RulesAdmin from './RulesAdmin';
+import Settings from './Settings';
 import News from './News';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import type { DropResult, DraggableProvided, DroppableProvided } from 'react-beautiful-dnd';
@@ -370,7 +371,7 @@ function ensureBlockIds(content: DashboardContent): DashboardContent {
 const Dashboard: React.FC = () => {
   // --- Main dashboard navigation ---
   // View state: initial home chooser with 3 large buttons
-  const [dashboardView, setDashboardView] = useState<'home'|'page'|'menu'|'newsletter'|'rules'>('home');
+  const [dashboardView, setDashboardView] = useState<'home'|'page'|'menu'|'newsletter'|'rules'|'settings'>('home');
   // ...existing code...
   const [content, setContent] = useState<DashboardContent>(ensureBlockIds(defaultContent));
   const [selectedPage, setSelectedPage] = useState(0);
@@ -932,8 +933,21 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener('resize', condense);
   }, [selectedPage, content.pages[selectedPage]?.blocks.length]);
 
-  const pageTitle = dashboardView === 'page' ? 'Pagina Editor' : dashboardView === 'menu' ? 'Menu Editor' : dashboardView === 'newsletter' ? 'Nieuws Editor' : dashboardView === 'rules' ? 'Spelregels Beheer' : 'Guuscode Dashboard';
+  const pageTitle = dashboardView === 'page'
+    ? 'Pagina Editor'
+    : dashboardView === 'menu'
+    ? 'Menu Editor'
+    : dashboardView === 'newsletter'
+    ? 'Nieuws Editor'
+    : dashboardView === 'rules'
+    ? 'Spelregels Beheer'
+    : dashboardView === 'settings'
+    ? 'Instellingen'
+    : 'Guuscode Dashboard';
 
+
+  // Determine if there are unsaved changes for global save bar
+  const unsaved = JSON.stringify(content) !== JSON.stringify(lastSavedContentRef.current);
 
   return (
     <div className="dashboard-root">
@@ -979,6 +993,13 @@ const Dashboard: React.FC = () => {
               <div className="dashboard-home-card-title">Spelregels</div>
               <div className="dashboard-home-card-desc">Beheer spelvarianten, zichtbaarheid & uitleg.</div>
             </button>
+            <button className="dashboard-home-card" onClick={() => setDashboardView('settings')}>
+              <span className="home-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.26 0 .51-.06  .74-.17A1.65 1.65 0 0 0 10.4 3.1L10.5 3a2 2 0 0 1 3 0l.06.09c.14.23.33.43.55.57.23.11.48.17.74.17a1.65 1.65 0 0 0 1.51-1l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c0 .26.06.51.17.74.11.23.27.43.48.59.21.16.46.26.72.28H21a2 2 0 0 1 0 4h-.09c-.26 0-.51.06-.74.17-.23.14-.43.33-.57.55a1.65 1.65 0 0 0-.2.67z"/></svg>
+              </span>
+              <div className="dashboard-home-card-title">Instellingen</div>
+              <div className="dashboard-home-card-desc">Thema, openingstijden, tarieven & contact.</div>
+            </button>
           </div>
         </div>
       )}
@@ -987,92 +1008,7 @@ const Dashboard: React.FC = () => {
       {dashboardView === 'page' && (
         <>
           <div className="page-editor">
-            <div className="dashboard-settings-card page-settings-card">
-              <h2>Site Instellingen</h2>
-              <div className="dashboard-settings-section">
-                <label className="dashboard-settings-label">
-                  Koptekst
-                  <input name="logoText" maxLength={24} value={content.logoText} onChange={handleField} className="dashboard-settings-input" />
-                </label>
-              </div>
-              {/* Theme color picker controls site theme (public pages) but dashboard UI stays blauw via CSS variable override */}
-              <div className="dashboard-settings-section">
-                <div className="dashboard-settings-row">
-                  <label className="dashboard-settings-label">Thema</label>
-                  <div className="color-dropdown-wrapper" ref={mainColorDropdownRef}>
-                    <button
-                      className="color-dropdown-btn"
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMainColorDropdownOpen(true); }}
-                      aria-haspopup="dialog"
-                      aria-expanded={mainColorDropdownOpen}
-                    >
-                      <span className="color-dropdown-circle" style={{ background: content.mainColor }} />
-                      <span className="color-dropdown-caret"></span>
-                    </button>
-                    {/* Color popup overlay rendered at root when open */}
-                  </div>
-                </div>
-              </div>
-              <div className="dashboard-settings-section">
-                <h3>Achtergrondafbeeldingen</h3>
-                <DragDropContext onDragEnd={result => {
-                  if (!result.destination) return;
-                  const imgs = Array.from(content.backgroundImages);
-                  const [removed] = imgs.splice(result.source.index, 1);
-                  imgs.splice(result.destination.index, 0, removed);
-                  setContent(prev => ({ ...prev, backgroundImages: imgs }));
-                }}>
-                  <Droppable droppableId="bgimgs" direction="horizontal">
-                    {provided => (
-                      <div className="dashboard-bgimg-gallery" ref={provided.innerRef} {...provided.droppableProps}>
-                        {content.backgroundImages.map((img, i) => (
-                          <Draggable key={img + i} draggableId={img + i} index={i}>
-                            {prov => (
-                              <div
-                                className="dashboard-bgimg-thumb"
-                                ref={prov.innerRef}
-                                {...prov.draggableProps}
-                                {...prov.dragHandleProps}
-                              >
-                                <img src={img} alt="Background" />
-                                {img.startsWith('blob:') && (
-                                  <div style={{ position: 'absolute', bottom: 4, left: 4, right: 4, background: '#000a', color: '#fff', fontSize: 10, padding: '2px 4px', borderRadius: 4, textAlign: 'center' }}>
-                                    tijdelijk – niet opgeslagen
-                                  </div>
-                                )}
-                                <button className="dashboard-bgimg-remove" onClick={() => removeBgImage(i)} aria-label="Remove">×</button>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  style={{ display: 'none' }}
-                  ref={fileInputRef}
-                  onChange={handleUploadImage}
-                />
-                <button
-                  className="dashboard-bgimg-add"
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="Add Background Image"
-                  title="Add Background Image"
-                  type="button"
-                >
-                  Afbeelding toevoegen
-                </button>
-                {bgUploading && <div style={{ marginTop: 8, fontSize: 12, color: content.mainColor }}>Uploaden...</div>}
-                {bgUploadError && <div style={{ marginTop: 6, fontSize: 12, color: '#c62828' }}>{bgUploadError}</div>}
-              </div>
-            </div>
-            <hr className="page-section-divider" />
+            {/* Site instellingen verplaatst naar Instellingen pagina */}
             <div className="page-hero-editor">
               <h2 className="page-section-title">Homepage Content</h2>
               {/* Pinned hero block */}
@@ -1288,6 +1224,9 @@ const Dashboard: React.FC = () => {
           <RulesAdmin embedded />
         </div>
       )}
+      {dashboardView === 'settings' && (
+        <Settings content={content} setContent={setContent} />
+      )}
       {/* Menu Editor View */}
       {dashboardView === 'menu' && (
         <MenuPanel
@@ -1302,6 +1241,20 @@ const Dashboard: React.FC = () => {
       {dashboardView === 'newsletter' && (
         <div className="dashboard-newsletter-editor" style={{ marginTop: 32 }}>
           <News />
+        </div>
+      )}
+      {/* Globale save bar (zichtbaar op alle niet-home views) */}
+      {dashboardView !== 'home' && (
+        <div className={`global-save-bar${saveStatus==='saving' ? ' saving' : ''}${unsaved ? ' dirty' : ''}`}>
+          <button
+            type="button"
+            className="global-save-btn"
+            disabled={saveStatus==='saving' || !unsaved}
+            onClick={handleSave}
+          >
+            {saveStatus === 'saving' ? 'Opslaan...' : unsaved ? 'Opslaan' : 'Opgeslagen'}
+          </button>
+          {unsaved && saveStatus!=='saving' && <span className="global-save-indicator" aria-label="Niet opgeslagen wijzigingen">●</span>}
         </div>
       )}
       {showClearAllConfirm && (
