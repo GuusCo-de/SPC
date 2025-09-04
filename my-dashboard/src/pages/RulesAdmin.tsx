@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
 import '../pages/Dashboard.css';
+import { GAMES_FALLBACK } from './Rules';
 
 type GameRule = {
   id: string;
@@ -34,12 +36,43 @@ const RulesAdmin: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<GameRule | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<GameRule | null>(null);
 
   useEffect(()=>{ (async()=>{
     try {
       const res = await fetch(`${BACKEND_API_URL}/api/rules`);
       const data = await res.json();
-      setRules(Array.isArray(data)? data : []);
+      if (Array.isArray(data) && data.length) {
+        setRules(data);
+      } else {
+        // Seed from fallback (map public schema -> admin schema)
+        const seeded = GAMES_FALLBACK.map((g, idx) => ({
+          id: g.id,
+          title: g.titel,
+          type: g.type,
+          shortDescription: g.korteBeschrijving,
+            details: g.details || [''],
+            rules: g.regels || [''],
+            tips: g.tips || [''],
+            enabled: g.enabled !== false,
+            order: idx,
+        }));
+        setRules(seeded);
+      }
+    } catch {
+      // On error also seed fallback
+      const seeded = GAMES_FALLBACK.map((g, idx) => ({
+        id: g.id,
+        title: g.titel,
+        type: g.type,
+        shortDescription: g.korteBeschrijving,
+        details: g.details || [''],
+        rules: g.regels || [''],
+        tips: g.tips || [''],
+        enabled: g.enabled !== false,
+        order: idx,
+      }));
+      setRules(seeded);
     } finally { setLoading(false); }
   })(); },[]);
 
@@ -99,54 +132,93 @@ const RulesAdmin: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
         <button onClick={startNew}>Nieuwe regelset</button>
         <button onClick={saveAll} disabled={saving}>{saving? 'Opslaan...' : 'Alles opslaan'}</button>
       </div>
-      {editing && (
-        <div className="dashboard-section-card" style={{border:'2px solid var(--main)'}}>
-          <h2>{editing.id.startsWith('tmp-')? 'Nieuwe spelregel' : 'Bewerk spelregel'}</h2>
-          <div style={{display:'grid', gap:16, gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))'}}>
-            <label> Titel<input value={editing.title} onChange={e=>updateField('title', e.target.value)} required /></label>
-            <label> Type<select value={editing.type} onChange={e=>updateField('type', e.target.value)}>{TYPES.map(t=> <option key={t}>{t}</option>)}</select></label>
-            <label> Korte beschrijving<textarea value={editing.shortDescription} onChange={e=>updateField('shortDescription', e.target.value)} /></label>
-            <label style={{display:'flex', gap:8, alignItems:'center'}}> Zichtbaar <input type="checkbox" checked={editing.enabled} onChange={e=>updateField('enabled', e.target.checked)} /></label>
-          </div>
-          <div style={{display:'flex', flexDirection:'column', gap:28, marginTop:24}}>
-            {(['details','rules','tips'] as const).map(section => (
-              <div key={section}>
-                <h3 style={{margin:'0 0 8px'}}>{section === 'details' ? 'Uitleg paragrafen' : section === 'rules' ? 'Regels (bullets)' : 'Tips'}</h3>
-                {editing[section].map((val, idx) => (
-                  <div key={idx} style={{display:'flex', gap:8, marginBottom:8}}>
-                    <textarea style={{flex:1}} value={val} onChange={e=>updateArray(section, idx, e.target.value)} />
-                    <button type="button" onClick={()=>removeArrayItem(section, idx)} className="btn subtle" aria-label="Verwijderen">×</button>
-                  </div>
-                ))}
-                <button type="button" onClick={()=>addArrayItem(section)}>+ Voeg toe</button>
+      {editing && ReactDOM.createPortal(
+        <div className="dashboard-modal-overlay" role="dialog" aria-modal="true" aria-label="Spelregel Bewerken" onClick={cancelEdit}>
+          <div className="dashboard-modal rule-edit-modal" onClick={e=>e.stopPropagation()}>
+            <button className="dashboard-modal-close" aria-label="Sluiten" onClick={cancelEdit}>×</button>
+            <div className="dashboard-modal-header rule-edit-header">
+              <div className="rule-edit-topbar">
+                <select className="rule-type-select" value={editing.type} onChange={e=>updateField('type', e.target.value)} aria-label="Type">
+                  {TYPES.map(t=> <option key={t} value={t}>{t}</option>)}
+                </select>
+                <label className="rule-visible-toggle">
+                  <input type="checkbox" checked={editing.enabled} onChange={e=>updateField('enabled', e.target.checked)} aria-label="Zichtbaar" />
+                  <span className="rule-toggle-slider" aria-hidden="true"></span>
+                  <span className="rule-toggle-text">{editing.enabled ? 'Zichtbaar' : 'Verborgen'}</span>
+                </label>
               </div>
-            ))}
-          </div>
-          <div style={{marginTop:24, display:'flex', gap:12, flexWrap:'wrap'}}>
-            <button onClick={saveRule} className="btn primary">Gereed</button>
-            <button onClick={cancelEdit} className="btn subtle">Annuleren</button>
-          </div>
-        </div>
-      )}
-      <div style={{display:'grid', gap:18, gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))'}}>
-        {rules.map((r,i) => (
-          <div key={r.id} className="dashboard-page-card" style={{opacity: r.enabled?1:0.55}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
-              <strong>{r.title}</strong>
-              <label style={{display:'flex', alignItems:'center', gap:4, fontSize:12}}>Zichtbaar <input type="checkbox" checked={r.enabled} onChange={()=>toggleEnabled(r.id)} /></label>
+              <div className="rule-title-wrap">
+                <label className="rule-title-label">Titel
+                  <input className="rule-title-input" value={editing.title} onChange={e=>updateField('title', e.target.value)} placeholder="Titel van spelvariant" required />
+                </label>
+              </div>
+              <label className="rule-shortdesc-label">Korte beschrijving
+                <textarea className="rule-shortdesc-input" value={editing.shortDescription} onChange={e=>updateField('shortDescription', e.target.value)} placeholder="Korte teaser / samenvatting" />
+              </label>
             </div>
-            <div style={{fontSize:'.75rem', fontWeight:600, letterSpacing:'.08em', color:'var(--main)'}}>{r.type}</div>
-            <p style={{margin:'4px 0 8px', fontSize:'.85rem', lineHeight:1.4}}>{r.shortDescription}</p>
-            <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
-              <button onClick={()=>startEdit(r)} className="btn primary" style={{margin:0}}>Bewerk</button>
-              <button onClick={()=>handleDuplicate(r.id)} className="btn subtle" style={{margin:0}}>Dupliceer</button>
-              <button onClick={()=>handleDelete(r.id)} className="btn danger" style={{margin:0}}>Verwijder</button>
+            <div className="dashboard-modal-body rule-modal-body">
+              {(['details','rules','tips'] as const).map(section => (
+                <div className="rule-section-block" key={section}>
+                  <h3>{section === 'details' ? 'Uitleg paragrafen' : section === 'rules' ? 'Regels (bullets)' : 'Tips'}</h3>
+                  {editing[section].map((val, idx) => (
+                    <div key={idx} className="rule-array-row">
+                      <textarea value={val} onChange={e=>updateArray(section, idx, e.target.value)} />
+                      <button type="button" onClick={()=>removeArrayItem(section, idx)} className="btn subtle" aria-label="Verwijderen">×</button>
+                    </div>
+                  ))}
+                  <button type="button" className="btn subtle" onClick={()=>addArrayItem(section)}>+ Voeg {section === 'rules' ? 'regel' : section === 'details' ? 'paragraaf' : 'tip'} toe</button>
+                </div>
+              ))}
             </div>
-            <div style={{fontSize:10, opacity:.6, marginTop:6}}>Volgorde: {i}</div>
+            <div className="dashboard-modal-footer">
+              <button onClick={cancelEdit} className="btn subtle">Annuleren</button>
+              <button onClick={saveRule} className="btn primary">Opslaan</button>
+            </div>
+          </div>
+  </div>, document.body)}
+      <div style={{display:'grid', gap:22, gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))'}}>
+        {rules.map(r => (
+          <div key={r.id} className="dashboard-page-card" style={{padding:'18px 18px 16px', opacity:r.enabled?1:.55}}>
+            <div className="rule-card-top">
+              <div style={{flex:1,minWidth:0}}>
+                <p className="rule-card-title" title={r.title}>{r.title}</p>
+                <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
+                  <span className="rule-card-type">{r.type}</span>
+                  <label className="rule-small-toggle">
+                    <input type="checkbox" checked={r.enabled} onChange={()=>toggleEnabled(r.id)} />
+                    <span className="slider"></span>
+                    <span>{r.enabled? 'AAN':'UIT'}</span>
+                  </label>
+                </div>
+              </div>
+              <div style={{display:'flex', flexDirection:'row', gap:8}}>
+                <button className="rule-icon-btn" title="Bewerken" onClick={()=>startEdit(r)} aria-label={`Bewerk ${r.title}`}>
+                  <img src="/icons/edit.svg" alt="" width={20} height={20} loading="lazy" />
+                </button>
+                <button className="rule-icon-btn" title="Dupliceer" onClick={()=>handleDuplicate(r.id)} aria-label={`Dupliceer ${r.title}`}>
+                  <img src="/icons/duplicate.svg" alt="" width={20} height={20} loading="lazy" />
+                </button>
+                <button className="rule-icon-btn" title="Verwijder" onClick={()=>setConfirmDelete(r)} aria-label={`Verwijder ${r.title}`}>
+                  <img src="/icons/delete.svg" alt="" width={20} height={20} loading="lazy" />
+                </button>
+              </div>
+            </div>
+            {r.shortDescription && <p className="rule-card-desc">{r.shortDescription}</p>}
           </div>
         ))}
         {!rules.length && <div>Geen spelregels opgeslagen.</div>}
       </div>
+      {confirmDelete && ReactDOM.createPortal(
+        <div className="dashboard-confirm-overlay" role="alertdialog" aria-modal="true" aria-label="Bevestig verwijderen" onClick={()=>setConfirmDelete(null)}>
+          <div className="dashboard-confirm-box" onClick={e=>e.stopPropagation()}>
+            <h3>Verwijder spelregel?</h3>
+            <p style={{margin:0, lineHeight:1.5}}>Weet je zeker dat je <strong>{confirmDelete.title}</strong> wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</p>
+            <div className="dashboard-confirm-actions">
+              <button className="btn subtle" onClick={()=>setConfirmDelete(null)}>Annuleren</button>
+              <button className="btn danger" onClick={()=>{ handleDelete(confirmDelete.id); setConfirmDelete(null); }}>Verwijder</button>
+            </div>
+          </div>
+        </div>, document.body)}
     </>
   );
 

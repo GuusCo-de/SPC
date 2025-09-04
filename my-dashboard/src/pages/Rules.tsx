@@ -15,7 +15,7 @@ type GameRule = {
 };
 
 // Static fallback definitions (used if backend has none)
-const GAMES_FALLBACK: GameRule[] = [
+export const GAMES_FALLBACK: GameRule[] = [
 	{
 		id: '8ball',
 		titel: '8-Ball Pool',

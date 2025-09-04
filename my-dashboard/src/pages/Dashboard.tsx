@@ -934,6 +934,7 @@ const Dashboard: React.FC = () => {
 
   const pageTitle = dashboardView === 'page' ? 'Pagina Editor' : dashboardView === 'menu' ? 'Menu Editor' : dashboardView === 'newsletter' ? 'Nieuws Editor' : dashboardView === 'rules' ? 'Spelregels Beheer' : 'Guuscode Dashboard';
 
+
   return (
     <div className="dashboard-root">
       <header className={dashboardView !== 'home' ? 'with-back' : 'home'}>
