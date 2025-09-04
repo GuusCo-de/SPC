@@ -127,6 +127,58 @@ app.post('/api/dashboard-content', (req, res) => {
   }
 });
 
+// ===== Backup utilities & endpoints =====
+function listBackups() {
+  try {
+    return fs.readdirSync(DATA_DIR)
+      .filter(f => f.startsWith('dashboard-content.') && f.endsWith('.bak.json'))
+      .map(name => {
+        const full = path.join(DATA_DIR, name);
+        const stat = fs.statSync(full);
+        return { name, size: stat.size, mtime: stat.mtimeMs };
+      })
+      .sort((a, b) => b.mtime - a.mtime);
+  } catch {
+    return [];
+  }
+}
+
+// Create & return a fresh backup (also returns the JSON so client can download directly)
+app.get('/api/dashboard-content/backup', (req, res) => {
+  try {
+    const current = readContent();
+    if (!current) return res.status(404).json({ success: false, error: 'No content' });
+    const ts = Date.now();
+    const file = path.join(DATA_DIR, `dashboard-content.${ts}.bak.json`);
+    const json = JSON.stringify(current, null, 2);
+    fs.writeFileSync(file, json, 'utf-8');
+    res.json({ success: true, filename: `dashboard-backup-${ts}.json`, createdAt: ts, content: current });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// List existing backups
+app.get('/api/dashboard-content/backups', (_req, res) => {
+  res.json({ success: true, backups: listBackups() });
+});
+
+// Restore from backup name
+app.post('/api/dashboard-content/restore', (req, res) => {
+  const { name } = req.body || {};
+  if (!name) return res.status(400).json({ success: false, error: 'Missing backup name' });
+  const target = path.join(DATA_DIR, name);
+  if (!fs.existsSync(target)) return res.status(404).json({ success: false, error: 'Backup not found' });
+  try {
+    const raw = fs.readFileSync(target, 'utf-8');
+    const parsed = JSON.parse(raw);
+    writeContent(parsed);
+    res.json({ success: true, restored: name });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ==== News Endpoints (stored inside dashboard-content.json under content.news) ====
 function readNewsArray() {
   const data = readContent();

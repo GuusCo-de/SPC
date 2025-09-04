@@ -963,6 +963,32 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handler);
   }, [unsaved]);
 
+  // Add backup card and handler to request backup from backend and trigger JSON download.
+  const [creatingBackup, setCreatingBackup] = useState(false);
+  const createAndDownloadBackup = async () => {
+    if (creatingBackup) return;
+    setCreatingBackup(true);
+    try {
+      const res = await fetch(`${BACKEND_API_URL}/api/dashboard-content/backup`);
+      if (!res.ok) throw new Error('Backup endpoint failed');
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Backup mislukt');
+      const blob = new Blob([JSON.stringify(data.content, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename || `dashboard-backup-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e:any) {
+      alert('Backup mislukt: ' + e.message);
+    } finally {
+      setCreatingBackup(false);
+    }
+  };
+
   return (
     <div className="dashboard-root">
       <header className={dashboardView !== 'home' ? 'with-back' : 'home'}>
@@ -1020,6 +1046,13 @@ const Dashboard: React.FC = () => {
               </span>
               <div className="dashboard-home-card-title">Versies</div>
               <div className="dashboard-home-card-desc">Geschiedenis bekijken & terugzetten.</div>
+            </button>
+            <button className="dashboard-home-card" onClick={createAndDownloadBackup} disabled={creatingBackup}>
+              <span className="home-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v14"/><path d="M5 10l7 7 7-7"/><path d="M5 21h14"/></svg>
+              </span>
+              <div className="dashboard-home-card-title">Backup</div>
+              <div className="dashboard-home-card-desc">Download actuele content JSON{creatingBackup ? '…' : ''}</div>
             </button>
           </div>
         </div>
