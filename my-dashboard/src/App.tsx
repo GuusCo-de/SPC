@@ -138,7 +138,7 @@ const AppContent = () => {
         <>
           {/* Verberg globale site navigatie op dashboard */}
           {!window.location.pathname.startsWith('/dashboard') && <DockNav />}
-          <main>
+          <main className={window.location.pathname.startsWith('/dashboard') ? 'no-dock-pad' : ''}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/menu" element={<Menu />} />

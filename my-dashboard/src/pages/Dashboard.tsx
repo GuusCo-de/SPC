@@ -57,12 +57,13 @@ const MENU_CATEGORY_LABELS: Record<string,string> = {
   Other: 'Overig'
 };
 
-function MenuPanel({ menu, onChange, mainColor, accentColor, hideTitle }: {
+function MenuPanel({ menu, onChange, mainColor, accentColor, hideTitle, setOverlayActive }: {
   menu: MenuItem[];
   onChange: (menu: MenuItem[]) => void;
   mainColor: string;
   accentColor: string;
   hideTitle?: boolean;
+  setOverlayActive: (active: boolean) => void;
 }) {
   const [addFields, setAddFields] = React.useState<Partial<MenuItem>>({ category: MENU_CATEGORIES[0] });
   const [addPopup, setAddPopup] = React.useState<string | null>(null); // category or null
@@ -70,7 +71,7 @@ function MenuPanel({ menu, onChange, mainColor, accentColor, hideTitle }: {
   const [editFields, setEditFields] = React.useState<Partial<MenuItem>>({});
   const [selected, setSelected] = React.useState<string[]>([]);
   const [confirmRemove, setConfirmRemove] = React.useState<{ id?: string; multi?: boolean } | null>(null);
-  const [saving, setSaving] = React.useState(false);
+  // Removed local saving state; menu persists only via global save now
 
   // Group items by category
   const grouped: { [cat: string]: MenuItem[] } = {};
@@ -108,25 +109,7 @@ function MenuPanel({ menu, onChange, mainColor, accentColor, hideTitle }: {
   // NOTE: When using a temporary blob fallback image the upload failed; those images are NOT persisted.
   const BACKEND_API_URL = (import.meta.env.VITE_BACKEND_URL || 'https://spc-8hcz.onrender.com').replace(/\/$/, '');
 
-  // Save menu to backend
-  const saveMenu = async () => {
-    setSaving(true);
-    try {
-      // Save to backend using /api/dashboard-content
-      const res = await fetch(`${BACKEND_API_URL}/api/dashboard-content`);
-      const data = await res.json();
-      const content = data.content;
-      const history = data.history || [];
-      const updated = { ...content, menu };
-      await fetch(`${BACKEND_API_URL}/api/dashboard-content`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: updated, history }),
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Removed standalone save; rely on global dashboard save button
 
   // Edit item
   const startEdit = (item: MenuItem) => {
@@ -161,6 +144,12 @@ function MenuPanel({ menu, onChange, mainColor, accentColor, hideTitle }: {
     }
     setConfirmRemove(null);
   };
+
+  // Notify parent when an overlay (add/edit popup or confirm remove) is active
+  React.useEffect(() => {
+    setOverlayActive(!!addPopup || !!confirmRemove);
+    return () => setOverlayActive(false);
+  }, [addPopup, confirmRemove, setOverlayActive]);
 
   // Select item
   const toggleSelect = (id: string) => {
@@ -222,11 +211,7 @@ function MenuPanel({ menu, onChange, mainColor, accentColor, hideTitle }: {
           <button onClick={handleRemoveSelected} className="btn danger">Verwijder geselecteerde ({selected.length})</button>
         </div>
       )}
-      <div className="menu-save-bar">
-        <button onClick={saveMenu} disabled={saving} className="btn primary large">
-          {saving ? 'Bezig met opslaan...' : 'Opslaan'}
-        </button>
-      </div>
+  {/* Standalone menu save removed; use global save bar */}
       {addPopup && (
         <div className="menu-popup-overlay" role="dialog" aria-modal="true">
           <form onSubmit={handleAddPopupSubmit} className="menu-popup">
@@ -395,15 +380,15 @@ const Dashboard: React.FC = () => {
   const [justReverted, setJustReverted] = useState(false);
   // Add a ref to store the last saved content
   const lastSavedContentRef = useRef(content);
-  // Track if we are navigating back to home and need confirm
-  const [pendingLeaveToHome, setPendingLeaveToHome] = useState(false);
-  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  // Removed back navigation unsaved confirmation (always navigates immediately)
   // Add state for block delete confirmation
   const [blockToDelete, setBlockToDelete] = useState<{pageIdx: number, blockIdx: number} | null>(null);
   // Clear all history confirmation
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
   // Add state for custom colors:
   const [customColors, setCustomColors] = useState<string[]>(['#d500f9']);
+  // Track menu overlay (add/remove popups) to hide global save bar
+  const [menuOverlayActive, setMenuOverlayActive] = useState(false);
   // Track that initial content has loaded so we don't flag unsaved prematurely
   const [initialLoaded, setInitialLoaded] = useState(false);
   // Add handler to add a custom color:
@@ -586,12 +571,8 @@ const Dashboard: React.FC = () => {
       setPendingVersionType(null);
       setHistory(newHistory);
       setSaveStatus('saved');
-      lastSavedContentRef.current = contentWithMeta;
-      // If we were saving as part of leaving the editor, go home afterward
-      if (pendingLeaveToHome) {
-        setPendingLeaveToHome(false);
-        setDashboardView('home');
-      }
+      // Store baseline WITHOUT volatile __versionMeta to prevent false dirty state
+      lastSavedContentRef.current = { ...cleanedContent } as DashboardContent;
     } catch {
       setSaveStatus('unsaved');
       alert('Failed to save. Please try again.');
@@ -886,19 +867,21 @@ const Dashboard: React.FC = () => {
   const [showAddBlockMenu, setShowAddBlockMenu] = useState(false);
 
   // Mark unsaved changes when content diverges from lastSaved snapshot
+  // Helper to strip transient fields (like __versionMeta) before diffing
+  const stripTransient = (c: DashboardContent) => {
+    const { __versionMeta, ...rest } = c as any;
+    return rest;
+  };
+
   useEffect(() => {
     if (!initialLoaded) return; // skip until first load done
     if (saveStatus === 'saving') return;
-    const changed = JSON.stringify(content) !== JSON.stringify(lastSavedContentRef.current);
+    const changed = JSON.stringify(stripTransient(content)) !== JSON.stringify(stripTransient(lastSavedContentRef.current));
     setSaveStatus(changed ? 'unsaved' : 'saved');
   }, [content, initialLoaded, saveStatus]);
 
   const requestBackToHome = () => {
-    if (saveStatus === 'unsaved') {
-      setShowLeaveModal(true);
-    } else {
-      setDashboardView('home');
-    }
+    setDashboardView('home');
   };
 
   // Overflow toolbar condense for markdown + quill on small screens
@@ -947,7 +930,21 @@ const Dashboard: React.FC = () => {
 
 
   // Determine if there are unsaved changes for global save bar
-  const unsaved = JSON.stringify(content) !== JSON.stringify(lastSavedContentRef.current);
+  const unsaved = JSON.stringify(stripTransient(content)) !== JSON.stringify(stripTransient(lastSavedContentRef.current));
+  // Any modal/popup open? (history, note, edit note, block delete, clear all, color dropdown, menu overlay)
+  const anyModalOpen = showHistory || showNoteModal || !!editNoteModal || !!blockToDelete || showClearAllConfirm || mainColorDropdownOpen || accentColorDropdownOpen || menuOverlayActive;
+
+  // Warn user when closing/reloading tab with unsaved changes
+  useEffect(() => {
+    if (!unsaved) return; // attach only when needed
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [unsaved]);
 
   return (
     <div className="dashboard-root">
@@ -1123,79 +1120,8 @@ const Dashboard: React.FC = () => {
                 </DragDropContext>
             </div>
           </div>
-          {/* Version bar and modals (save, history, block delete, etc.) */}
-          <div className="dashboard-version-bar page-version-bar">
-            <button onClick={() => setShowVersionModal(true)} disabled={saveStatus === 'saving'} className="btn primary">
-              {saveStatus === 'saving' ? 'Opslaan...' : 'Opslaan'}
-            </button>
-            <button onClick={() => setShowHistory(h => !h)} className="btn subtle">
-              {showHistory ? 'Verberg Geschiedenis' : 'Toon Geschiedenis'}
-            </button>
-          </div>
-          {showHistory && (
-            <div className="dashboard-version-history version-history-panel">
-              <div className="version-history-head">
-                <h4 className="version-history-title">Versie Geschiedenis</h4>
-                <button onClick={() => setShowClearAllConfirm(true)} className="btn danger subtle">Alles verwijderen</button>
-              </div>
-              <div>
-                {history.map((h, i) => {
-                  const v = h.__versionMeta?.version || (history.length - i).toString();
-                  const isActive = v === activeVersion;
-                  return (
-                    <React.Fragment key={v}>
-                      <div className={`dashboard-version-row version-row-modern${isActive ? ' dashboard-version-current' : ''}`}>
-                        <div className="dashboard-version-info">
-                          <span className="dashboard-version-dot">{isActive ? '●' : '○'}</span>
-                          <span className="dashboard-version-number">v{v}</span>
-                          {h.__versionMeta?.name && <span className="dashboard-version-name">{h.__versionMeta.name}</span>}
-                        </div>
-                        <div className="dashboard-version-actions version-actions-modern">
-                          <button onClick={() => { handleRevert(h); setShowHistory(false); }} className="btn primary">Terugzetten</button>
-                          <button onClick={() => handleDeleteVersion(i)} className="btn danger subtle">Verwijder</button>
-                          <button onClick={() => openEditNoteModal(i)} className="btn subtle">Notitie</button>
-                        </div>
-                        <div className="dashboard-version-timestamp">
-                          {h.__versionMeta?.timestamp ? new Date(h.__versionMeta.timestamp).toLocaleString() : ''}
-                        </div>
-                      </div>
-                      {i < history.length - 1 && <div className="dashboard-version-divider" />}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {showNoteModal && noteModalContent && (
-            <div className="modal modern-modal">
-              <div className="modal-content modern-modal-content">
-                <h3>Notitie voor v{noteModalContent.version}{noteModalContent.title ? `: ${noteModalContent.title}` : ''}</h3>
-                <div>{noteModalContent.note || <span>(Geen notitie)</span>}</div>
-                <div className="modal-actions">
-                  <button onClick={closeNoteModal} className="btn primary">Sluiten</button>
-                </div>
-              </div>
-            </div>
-          )}
-          {editNoteModal && (
-            <div className="modal modern-modal">
-              <div className="modal-content modern-modal-content">
-                <h3>Versie notitie aanpassen v{editNoteModal.version}</h3>
-                <label>
-                  Titel (optioneel):
-                  <input value={editNoteModal.name} onChange={e => setEditNoteModal(m => m ? { ...m, name: e.target.value } : m)} />
-                </label>
-                <label>
-                  Notitie (optioneel):
-                  <textarea value={editNoteModal.note} onChange={e => setEditNoteModal(m => m ? { ...m, note: e.target.value } : m)} />
-                </label>
-                <div className="modal-actions">
-                  <button onClick={saveEditNoteModal} className="btn primary">Opslaan</button>
-                  <button onClick={closeEditNoteModal} className="btn subtle">Annuleren</button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Version bar removed: controls moved into global save dock */}
+          {/* History & note modals moved outside page view */}
           {/* Confirmation modal for block delete */}
           {blockToDelete && (
             <div className="modal modern-modal">
@@ -1235,6 +1161,7 @@ const Dashboard: React.FC = () => {
           mainColor={content.mainColor}
           accentColor={content.accentColor}
           hideTitle
+            setOverlayActive={setMenuOverlayActive}
         />
       )}
       {/* Newsletter View */}
@@ -1243,18 +1170,107 @@ const Dashboard: React.FC = () => {
           <News />
         </div>
       )}
-      {/* Globale save bar (zichtbaar op alle niet-home views) */}
-      {dashboardView !== 'home' && (
+  {/* Globale save bar: altijd tonen op niet-home en op home alleen bij unsaved */}
+  {(dashboardView !== 'home' || unsaved) && !anyModalOpen && (
         <div className={`global-save-bar${saveStatus==='saving' ? ' saving' : ''}${unsaved ? ' dirty' : ''}`}>
           <button
             type="button"
             className="global-save-btn"
             disabled={saveStatus==='saving' || !unsaved}
             onClick={handleSave}
+            title="Slaat alle wijzigingen op: pagina's, menu, instellingen"
           >
             {saveStatus === 'saving' ? 'Opslaan...' : unsaved ? 'Opslaan' : 'Opgeslagen'}
           </button>
+          <button
+            type="button"
+            className="global-save-btn history-btn"
+            onClick={() => setShowHistory(h => !h)}
+            disabled={saveStatus==='saving'}
+            title={showHistory ? 'Verberg versiegeschiedenis' : 'Toon versiegeschiedenis'}
+          >
+            {showHistory ? 'Geschiedenis ✕' : 'Geschiedenis'}
+          </button>
           {unsaved && saveStatus!=='saving' && <span className="global-save-indicator" aria-label="Niet opgeslagen wijzigingen">●</span>}
+        </div>
+      )}
+      {showHistory && (
+        <div
+          className="modal modern-modal version-history-modal"
+          role="dialog" aria-modal="true"
+          onMouseDown={e => { if (e.target === e.currentTarget) setShowHistory(false); }}
+        >
+          <div className="modal-content modern-modal-content version-history-modal-content">
+            <div className="version-history-head">
+              <h4 className="version-history-title">Versie Geschiedenis</h4>
+              <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+                <button onClick={() => setShowClearAllConfirm(true)} className="btn danger subtle">Alles verwijderen</button>
+                <button onClick={() => setShowHistory(false)} className="btn subtle">Sluiten</button>
+              </div>
+            </div>
+            <div className="version-history-scroll">
+              {history.map((h, i) => {
+                const v = h.__versionMeta?.version || (history.length - i).toString();
+                const isActive = v === activeVersion;
+                return (
+                  <React.Fragment key={v}>
+                    <div className={`dashboard-version-row version-row-modern${isActive ? ' dashboard-version-current' : ''}`}>
+                      <div className="dashboard-version-info">
+                        <span className="dashboard-version-dot">{isActive ? '●' : '○'}</span>
+                        <span className="dashboard-version-number">v{v}</span>
+                        {h.__versionMeta?.name && <span className="dashboard-version-name">{h.__versionMeta.name}</span>}
+                      </div>
+                      <div className="dashboard-version-actions version-actions-modern">
+                        <button onClick={() => { handleRevert(h); setShowHistory(false); }} className="btn primary">Terugzetten</button>
+                        <button onClick={() => handleDeleteVersion(i)} className="btn danger subtle">Verwijder</button>
+                        <button onClick={() => openEditNoteModal(i)} className="btn subtle">Notitie</button>
+                      </div>
+                      <div className="dashboard-version-timestamp">{h.__versionMeta?.timestamp ? new Date(h.__versionMeta.timestamp).toLocaleString() : ''}</div>
+                    </div>
+                    {i < history.length - 1 && <div className="dashboard-version-divider" />}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      {showNoteModal && noteModalContent && (
+        <div
+          className="modal modern-modal"
+          role="dialog" aria-modal="true"
+          onMouseDown={e => { if (e.target === e.currentTarget) closeNoteModal(); }}
+        >
+          <div className="modal-content modern-modal-content">
+            <h3>Notitie voor v{noteModalContent.version}{noteModalContent.title ? `: ${noteModalContent.title}` : ''}</h3>
+            <div>{noteModalContent.note || <span>(Geen notitie)</span>}</div>
+            <div className="modal-actions">
+              <button onClick={closeNoteModal} className="btn primary">Sluiten</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {editNoteModal && (
+        <div
+          className="modal modern-modal"
+          role="dialog" aria-modal="true"
+          onMouseDown={e => { if (e.target === e.currentTarget) closeEditNoteModal(); }}
+        >
+          <div className="modal-content modern-modal-content">
+            <h3>Versie notitie aanpassen v{editNoteModal.version}</h3>
+            <label>
+              Titel (optioneel):
+              <input value={editNoteModal.name} onChange={e => setEditNoteModal(m => m ? { ...m, name: e.target.value } : m)} />
+            </label>
+            <label>
+              Notitie (optioneel):
+              <textarea value={editNoteModal.note} onChange={e => setEditNoteModal(m => m ? { ...m, note: e.target.value } : m)} />
+            </label>
+            <div className="modal-actions">
+              <button onClick={saveEditNoteModal} className="btn primary">Opslaan</button>
+              <button onClick={closeEditNoteModal} className="btn subtle">Annuleren</button>
+            </div>
+          </div>
         </div>
       )}
       {showClearAllConfirm && (
@@ -1265,33 +1281,6 @@ const Dashboard: React.FC = () => {
             <div className="modal-actions">
               <button onClick={() => { handleClearHistory(); setShowClearAllConfirm(false); setShowHistory(false); }} className="btn danger">Ja, alles verwijderen</button>
               <button onClick={() => setShowClearAllConfirm(false)} className="btn subtle">Annuleren</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {showLeaveModal && (
-        <div className="modal">
-          <div className="modal-content" style={{ maxWidth: 420 }}>
-            <h3>Niet opgeslagen wijzigingen</h3>
-            <p>Wil je eerst opslaan voordat je teruggaat naar het hoofdmenu?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
-              <button
-                onClick={() => {
-                  setShowLeaveModal(false);
-                  setPendingLeaveToHome(true);
-                  handleSave();
-                }}
-                className="dashboard-version-btn"
-                disabled={saveStatus === 'saving'}
-              >Opslaan en Terug</button>
-              <button
-                onClick={() => {
-                  setShowLeaveModal(false);
-                  setDashboardView('home');
-                }}
-                className="dashboard-version-btn"
-              >Terug zonder opslaan</button>
-              <button onClick={() => setShowLeaveModal(false)} className="dashboard-version-btn">Annuleren</button>
             </div>
           </div>
         </div>

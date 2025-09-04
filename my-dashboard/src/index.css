@@ -123,15 +123,15 @@ main {
   position: static !important;
 }
 
-/* add space for nav */
+/* add space for nav only on pages that are not dashboard */
 @media (min-width: 1px) {
-  main {
-    padding-top: 7rem; 
+  main:not(.no-dock-pad) {
+    padding-top: 7rem;
   }
 }
 
 /* Center hero-card vertically in viewport */
-.hero-card {
+body:not(.dashboard-no-pad) .hero-card {
   background: rgba(255,255,255,0.65);
   box-shadow: 0 8px 48px #23252622, 0 1.5px 8px #23252611;
   border-radius: 2.5rem;

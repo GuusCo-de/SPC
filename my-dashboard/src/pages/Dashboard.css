@@ -6,6 +6,15 @@
 .global-save-btn:disabled{background:#3d4856;cursor:default}
 .global-save-btn:not(:disabled):hover{background:var(--main-light,#3c7ff1);transform:translateY(-2px)}
 .global-save-indicator{color:#27e09c;font-size:18px;line-height:1;animation:pulseDirty 1.5s ease-in-out infinite;filter:drop-shadow(0 0 4px rgba(39,224,156,.6))}
+.global-save-bar .history-btn{background:#2d3748;font-weight:500;opacity:.95}
+.global-save-bar .history-btn:hover:not(:disabled){background:#394556}
+.version-history-modal{display:flex;align-items:flex-start;justify-content:center;padding:70px 32px 90px;overflow-y:auto}
+.version-history-modal-content{max-width:1080px;width:100%;border-radius:28px;padding:46px 48px 54px;box-shadow:0 30px 80px -20px rgba(0,0,0,.45),0 6px 30px -10px rgba(0,0,0,.3)}
+.version-history-scroll{max-height:60vh;overflow:auto;padding-right:6px}
+.version-history-scroll::-webkit-scrollbar{width:10px}
+.version-history-scroll::-webkit-scrollbar-track{background:transparent}
+.version-history-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:6px}
+.version-history-scroll::-webkit-scrollbar-thumb:hover{background:#94a3b8}
 @keyframes pulseDirty{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
 @keyframes fadeInBar{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .dashboard-root {
