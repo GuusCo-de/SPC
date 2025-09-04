@@ -356,13 +356,12 @@ function ensureBlockIds(content: DashboardContent): DashboardContent {
 const Dashboard: React.FC = () => {
   // --- Main dashboard navigation ---
   // View state: initial home chooser with 3 large buttons
-  const [dashboardView, setDashboardView] = useState<'home'|'page'|'menu'|'newsletter'|'rules'|'settings'>('home');
+  const [dashboardView, setDashboardView] = useState<'home'|'page'|'menu'|'newsletter'|'rules'|'settings'|'history'>('home');
   // ...existing code...
   const [content, setContent] = useState<DashboardContent>(ensureBlockIds(defaultContent));
   const [selectedPage, setSelectedPage] = useState(0);
   const [textSelection, setTextSelection] = useState<{[blockId: string]: [number, number]}>({});
   const [history, setHistory] = useState<DashboardContent[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved'|'saving'|'unsaved'>('saved');
   const [activeVersion, setActiveVersion] = useState<string>('1');
   const formatDropdownRefs = useRef<{[blockId: string]: HTMLSelectElement | null}>({});
@@ -389,6 +388,8 @@ const Dashboard: React.FC = () => {
   const [customColors, setCustomColors] = useState<string[]>(['#d500f9']);
   // Track menu overlay (add/remove popups) to hide global save bar
   const [menuOverlayActive, setMenuOverlayActive] = useState(false);
+  // Track last saved time for redesigned save bar
+  const [lastSavedAt, setLastSavedAt] = useState<number|null>(null);
   // Track that initial content has loaded so we don't flag unsaved prematurely
   const [initialLoaded, setInitialLoaded] = useState(false);
   // Add handler to add a custom color:
@@ -573,6 +574,7 @@ const Dashboard: React.FC = () => {
       setSaveStatus('saved');
       // Store baseline WITHOUT volatile __versionMeta to prevent false dirty state
       lastSavedContentRef.current = { ...cleanedContent } as DashboardContent;
+  setLastSavedAt(Date.now());
     } catch {
       setSaveStatus('unsaved');
       alert('Failed to save. Please try again.');
@@ -926,13 +928,28 @@ const Dashboard: React.FC = () => {
     ? 'Spelregels Beheer'
     : dashboardView === 'settings'
     ? 'Instellingen'
+    : dashboardView === 'history'
+    ? 'Versie Geschiedenis'
     : 'Guuscode Dashboard';
 
 
   // Determine if there are unsaved changes for global save bar
   const unsaved = JSON.stringify(stripTransient(content)) !== JSON.stringify(stripTransient(lastSavedContentRef.current));
   // Any modal/popup open? (history, note, edit note, block delete, clear all, color dropdown, menu overlay)
-  const anyModalOpen = showHistory || showNoteModal || !!editNoteModal || !!blockToDelete || showClearAllConfirm || mainColorDropdownOpen || accentColorDropdownOpen || menuOverlayActive;
+  const anyModalOpen = showNoteModal || !!editNoteModal || !!blockToDelete || showClearAllConfirm || mainColorDropdownOpen || accentColorDropdownOpen || menuOverlayActive;
+  // Section-level change detection (lightweight) for display chips
+  const changedSections: string[] = [];
+  if (unsaved) {
+    try {
+      const base = lastSavedContentRef.current;
+      if (JSON.stringify(base.pages) !== JSON.stringify(content.pages)) changedSections.push('Pagina\'s');
+      if (JSON.stringify(base.menu||[]) !== JSON.stringify(content.menu||[])) changedSections.push('Menu');
+      if (JSON.stringify(base.backgroundImages) !== JSON.stringify(content.backgroundImages)) changedSections.push('Achtergronden');
+      if (base.mainColor !== content.mainColor || base.accentColor !== content.accentColor) changedSections.push('Thema');
+      // Generic fallback if none detected but unsaved true
+      if (!changedSections.length) changedSections.push('Inhoud');
+    } catch { /* ignore */ }
+  }
 
   // Warn user when closing/reloading tab with unsaved changes
   useEffect(() => {
@@ -996,6 +1013,13 @@ const Dashboard: React.FC = () => {
               </span>
               <div className="dashboard-home-card-title">Instellingen</div>
               <div className="dashboard-home-card-desc">Thema, openingstijden, tarieven & contact.</div>
+            </button>
+            <button className="dashboard-home-card" onClick={() => setDashboardView('history')}>
+              <span className="home-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><path d="M3 3v6h6"/><path d="M12 7v6l3.5 2"/></svg>
+              </span>
+              <div className="dashboard-home-card-title">Versies</div>
+              <div className="dashboard-home-card-desc">Geschiedenis bekijken & terugzetten.</div>
             </button>
           </div>
         </div>
@@ -1170,116 +1194,87 @@ const Dashboard: React.FC = () => {
           <News />
         </div>
       )}
-  {/* Globale save bar: altijd tonen op niet-home en op home alleen bij unsaved */}
-  {(dashboardView !== 'home' || unsaved) && !anyModalOpen && (
-        <div className={`global-save-bar${saveStatus==='saving' ? ' saving' : ''}${unsaved ? ' dirty' : ''}`}>
-          <button
-            type="button"
-            className="global-save-btn"
-            disabled={saveStatus==='saving' || !unsaved}
-            onClick={handleSave}
-            title="Slaat alle wijzigingen op: pagina's, menu, instellingen"
-          >
-            {saveStatus === 'saving' ? 'Opslaan...' : unsaved ? 'Opslaan' : 'Opgeslagen'}
-          </button>
-          <button
-            type="button"
-            className="global-save-btn history-btn"
-            onClick={() => setShowHistory(h => !h)}
-            disabled={saveStatus==='saving'}
-            title={showHistory ? 'Verberg versiegeschiedenis' : 'Toon versiegeschiedenis'}
-          >
-            {showHistory ? 'Geschiedenis ✕' : 'Geschiedenis'}
-          </button>
-          {unsaved && saveStatus!=='saving' && <span className="global-save-indicator" aria-label="Niet opgeslagen wijzigingen">●</span>}
-        </div>
-      )}
-      {showHistory && (
-        <div
-          className="modal modern-modal version-history-modal"
-          role="dialog" aria-modal="true"
-          onMouseDown={e => { if (e.target === e.currentTarget) setShowHistory(false); }}
-        >
-          <div className="modal-content modern-modal-content version-history-modal-content">
-            <div className="version-history-head">
-              <h4 className="version-history-title">Versie Geschiedenis</h4>
-              <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
-                <button onClick={() => setShowClearAllConfirm(true)} className="btn danger subtle">Alles verwijderen</button>
-                <button onClick={() => setShowHistory(false)} className="btn subtle">Sluiten</button>
-              </div>
+      {dashboardView === 'history' && (
+        <div className="dashboard-history-page" style={{padding:'32px 24px'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:24}}>
+            <h2 style={{margin:0,fontSize:'1.4rem'}}>Versie Geschiedenis</h2>
+            <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+              <button onClick={() => setDashboardView('home')} className="btn subtle">Terug</button>
+              {history.length > 0 && <button onClick={() => setShowClearAllConfirm(true)} className="btn danger subtle">Alles verwijderen</button>}
             </div>
-            <div className="version-history-scroll">
-              {history.map((h, i) => {
-                const v = h.__versionMeta?.version || (history.length - i).toString();
-                const isActive = v === activeVersion;
-                return (
-                  <React.Fragment key={v}>
-                    <div className={`dashboard-version-row version-row-modern${isActive ? ' dashboard-version-current' : ''}`}>
-                      <div className="dashboard-version-info">
-                        <span className="dashboard-version-dot">{isActive ? '●' : '○'}</span>
-                        <span className="dashboard-version-number">v{v}</span>
-                        {h.__versionMeta?.name && <span className="dashboard-version-name">{h.__versionMeta.name}</span>}
-                      </div>
-                      <div className="dashboard-version-actions version-actions-modern">
-                        <button onClick={() => { handleRevert(h); setShowHistory(false); }} className="btn primary">Terugzetten</button>
-                        <button onClick={() => handleDeleteVersion(i)} className="btn danger subtle">Verwijder</button>
-                        <button onClick={() => openEditNoteModal(i)} className="btn subtle">Notitie</button>
-                      </div>
-                      <div className="dashboard-version-timestamp">{h.__versionMeta?.timestamp ? new Date(h.__versionMeta.timestamp).toLocaleString() : ''}</div>
+          </div>
+          <div className="version-history-scroll inline-page">
+            {history.length === 0 && <div className="empty-history"><p>Geen versies opgeslagen.</p></div>}
+            {history.map((h,i) => {
+              const v = h.__versionMeta?.version || (history.length - i).toString();
+              const isActive = v === activeVersion;
+              return (
+                <React.Fragment key={v}>
+                  <div className={`dashboard-version-row version-row-modern${isActive ? ' dashboard-version-current' : ''}`}>
+                    <div className="dashboard-version-info">
+                      <span className="dashboard-version-dot">{isActive ? '●' : '○'}</span>
+                      <span className="dashboard-version-number">v{v}</span>
+                      {h.__versionMeta?.name && <span className="dashboard-version-name">{h.__versionMeta.name}</span>}
                     </div>
-                    {i < history.length - 1 && <div className="dashboard-version-divider" />}
-                  </React.Fragment>
-                );
-              })}
-            </div>
+                    <div className="dashboard-version-date">{h.__versionMeta?.timestamp ? new Date(h.__versionMeta.timestamp).toLocaleString() : ''}</div>
+                    <div className="dashboard-version-actions">
+                      {isActive ? (
+                        <span className="dashboard-version-current-label">Actief</span>
+                      ) : (
+                        <button onClick={() => { handleRevert(h); }} className="btn primary">Terugzetten</button>
+                      )}
+                      <button onClick={() => setEditNoteModal({ idx: i, name: h.__versionMeta?.name || '', note: h.__versionMeta?.note || '', version: v })} className="btn subtle">Wijzigen</button>
+                      <button onClick={() => setDeleteConfirmIdx(i)} className="btn danger subtle">Verwijderen</button>
+                    </div>
+                  </div>
+                  {(h.__versionMeta?.note || h.__versionMeta?.name) && <div className="dashboard-version-note">{h.__versionMeta?.note}</div>}
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
       )}
-      {showNoteModal && noteModalContent && (
-        <div
-          className="modal modern-modal"
-          role="dialog" aria-modal="true"
-          onMouseDown={e => { if (e.target === e.currentTarget) closeNoteModal(); }}
-        >
-          <div className="modal-content modern-modal-content">
-            <h3>Notitie voor v{noteModalContent.version}{noteModalContent.title ? `: ${noteModalContent.title}` : ''}</h3>
-            <div>{noteModalContent.note || <span>(Geen notitie)</span>}</div>
-            <div className="modal-actions">
-              <button onClick={closeNoteModal} className="btn primary">Sluiten</button>
-            </div>
+  {/* Globale save bar: altijd tonen op niet-home en op home alleen bij unsaved */}
+      {(dashboardView !== 'home' && dashboardView !== 'history' || (unsaved && dashboardView === 'home')) && !anyModalOpen && (() => {
+        const statusVariant = saveStatus === 'saving'
+          ? 'saving'
+          : unsaved
+            ? 'unsaved'
+            : !lastSavedAt
+              ? 'never'
+              : 'saved';
+        return (
+          <div className={`global-save-bar mini-dock compact-only${statusVariant==='unsaved' ? ' dirty' : ''}${statusVariant==='saving' ? ' saving' : ''}`} role="status" aria-live="polite">
+            <span className={`mini-status-indicator${statusVariant==='unsaved' ? ' dirty' : statusVariant==='saving' ? ' saving' : ' clean'}`} aria-hidden="true" />
+            <span className="mini-dock-text" aria-label={statusVariant === 'saving' ? 'Bezig met opslaan' : statusVariant === 'unsaved' ? 'Niet opgeslagen wijzigingen' : statusVariant === 'never' ? 'Nog niet opgeslagen' : 'Alles opgeslagen'}>
+              {statusVariant === 'saving' && 'Opslaan…'}
+              {statusVariant === 'unsaved' && 'Niet opgeslagen'}
+              {statusVariant === 'saved' && 'Opgeslagen'}
+              {statusVariant === 'never' && 'Nog niet opgeslagen'}
+            </span>
+            {(statusVariant === 'unsaved' || statusVariant === 'saving') && (
+              <button
+                type="button"
+                className="gsb-save-btn mini"
+                disabled={saveStatus==='saving' || !unsaved}
+                onClick={handleSave}
+              >
+                {saveStatus==='saving' ? 'Opslaan…' : 'Opslaan'}
+              </button>
+            )}
+            {statusVariant === 'saved' && (
+              <div className="mini-pill" aria-label="Opgeslagen">Opgeslagen</div>
+            )}
           </div>
-        </div>
-      )}
-      {editNoteModal && (
-        <div
-          className="modal modern-modal"
-          role="dialog" aria-modal="true"
-          onMouseDown={e => { if (e.target === e.currentTarget) closeEditNoteModal(); }}
-        >
-          <div className="modal-content modern-modal-content">
-            <h3>Versie notitie aanpassen v{editNoteModal.version}</h3>
-            <label>
-              Titel (optioneel):
-              <input value={editNoteModal.name} onChange={e => setEditNoteModal(m => m ? { ...m, name: e.target.value } : m)} />
-            </label>
-            <label>
-              Notitie (optioneel):
-              <textarea value={editNoteModal.note} onChange={e => setEditNoteModal(m => m ? { ...m, note: e.target.value } : m)} />
-            </label>
-            <div className="modal-actions">
-              <button onClick={saveEditNoteModal} className="btn primary">Opslaan</button>
-              <button onClick={closeEditNoteModal} className="btn subtle">Annuleren</button>
-            </div>
-          </div>
-        </div>
-      )}
+        );
+      })()}
       {showClearAllConfirm && (
         <div className="modal modern-modal">
           <div className="modal-content modern-modal-content">
             <h3>Alle Versies Verwijderen</h3>
             <p>Weet je zeker dat je alle geschiedenis wilt verwijderen? Alleen de huidige versie blijft als v1.</p>
             <div className="modal-actions">
-              <button onClick={() => { handleClearHistory(); setShowClearAllConfirm(false); setShowHistory(false); }} className="btn danger">Ja, alles verwijderen</button>
+              <button onClick={() => { handleClearHistory(); setShowClearAllConfirm(false); if(dashboardView==='history') setDashboardView('home'); }} className="btn danger">Ja, alles verwijderen</button>
               <button onClick={() => setShowClearAllConfirm(false)} className="btn subtle">Annuleren</button>
             </div>
           </div>

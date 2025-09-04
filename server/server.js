@@ -10,7 +10,32 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const DATA_FILE = path.join(__dirname, 'dashboard-content.json');
+// ========== Persistent Storage Setup ==========
+// Allow overriding data directory so content survives git operations / redeploys.
+// Example: set env DASHBOARD_DATA_DIR=C:\\dashboard-data (Windows) or /var/data/dashboard
+const DATA_DIR = process.env.DASHBOARD_DATA_DIR
+  ? path.resolve(process.env.DASHBOARD_DATA_DIR)
+  : path.join(__dirname, 'data'); // fallback inside server folder
+
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// Legacy location (old file kept for migration) – we will migrate it if new file absent
+const LEGACY_FILE = path.join(__dirname, 'dashboard-content.json');
+const DATA_FILE = path.join(DATA_DIR, 'dashboard-content.json');
+
+// Migrate legacy file to new location once
+try {
+  if (fs.existsSync(LEGACY_FILE) && !fs.existsSync(DATA_FILE)) {
+    fs.copyFileSync(LEGACY_FILE, DATA_FILE);
+    // Optional: keep legacy file as fallback; comment next line to retain
+    // fs.unlinkSync(LEGACY_FILE);
+    console.log('[storage] Migrated legacy dashboard-content.json to data directory');
+  }
+} catch (e) {
+  console.warn('[storage] Migration check failed:', e.message);
+}
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -46,7 +71,28 @@ function readContent() {
 
 // Helper to write content
 function writeContent(content) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(content, null, 2), 'utf-8');
+  // Atomic write: write to temp file then rename.
+  const tmp = DATA_FILE + '.tmp';
+  const json = JSON.stringify(content, null, 2);
+  fs.writeFileSync(tmp, json, 'utf-8');
+  fs.renameSync(tmp, DATA_FILE);
+  // Lightweight backup rotation (keep last 5)
+  try {
+    const backupName = path.join(DATA_DIR, 'dashboard-content.' + Date.now() + '.bak.json');
+    fs.writeFileSync(backupName, json, 'utf-8');
+    const backups = fs.readdirSync(DATA_DIR)
+      .filter(f => f.startsWith('dashboard-content.') && f.endsWith('.bak.json'))
+      .sort();
+    // Remove oldest if over 5
+    while (backups.length > 5) {
+      const oldest = backups.shift();
+      if (oldest) {
+        try { fs.unlinkSync(path.join(DATA_DIR, oldest)); } catch {/* ignore */}
+      }
+    }
+  } catch (e) {
+    console.warn('[storage] Backup rotation failed:', e.message);
+  }
 }
 
 // GET current dashboard content
