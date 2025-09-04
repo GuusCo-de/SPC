@@ -68,8 +68,6 @@ const Home: React.FC = () => {
       </section>
       <section id="info" className="info-section">
         <div className="info-content">
-          <h2>{content.infoTitle}</h2>
-          <p>{renderWithBreaks(content.infoText)}</p>
           {/* Render blocks from the Home page inside the same card */}
           {blocks.length > 0 && (
             <div className="home-blocks-list">

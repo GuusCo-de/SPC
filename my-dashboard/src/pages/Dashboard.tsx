@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import RulesAdmin from './RulesAdmin';
 import News from './News';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import type { DropResult, DraggableProvided, DroppableProvided } from 'react-beautiful-dnd';
@@ -369,7 +370,7 @@ function ensureBlockIds(content: DashboardContent): DashboardContent {
 const Dashboard: React.FC = () => {
   // --- Main dashboard navigation ---
   // View state: initial home chooser with 3 large buttons
-  const [dashboardView, setDashboardView] = useState<'home'|'page'|'menu'|'newsletter'>('home');
+  const [dashboardView, setDashboardView] = useState<'home'|'page'|'menu'|'newsletter'|'rules'>('home');
   // ...existing code...
   const [content, setContent] = useState<DashboardContent>(ensureBlockIds(defaultContent));
   const [selectedPage, setSelectedPage] = useState(0);
@@ -931,13 +932,13 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener('resize', condense);
   }, [selectedPage, content.pages[selectedPage]?.blocks.length]);
 
-  const pageTitle = dashboardView === 'page' ? 'Pagina Editor' : dashboardView === 'menu' ? 'Menu Editor' : dashboardView === 'newsletter' ? 'Nieuws Editor' : 'Guuscode Dashboard';
+  const pageTitle = dashboardView === 'page' ? 'Pagina Editor' : dashboardView === 'menu' ? 'Menu Editor' : dashboardView === 'newsletter' ? 'Nieuws Editor' : dashboardView === 'rules' ? 'Spelregels Beheer' : 'Guuscode Dashboard';
 
   return (
     <div className="dashboard-root">
       <header className={dashboardView !== 'home' ? 'with-back' : 'home'}>
         {dashboardView === 'home' ? (
-          <img src="/Images/LogoSquare.png" alt="GuusCode Logo" />
+          <img src="/guuscode-logo-dark.png" alt="GuusCode Logo" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/Images/LogoSquare.png'; }} />
         ) : (
           <button type="button" className="header-back-btn" aria-label="Terug" onClick={requestBackToHome}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -969,6 +970,13 @@ const Dashboard: React.FC = () => {
               </span>
               <div className="dashboard-home-card-title">Nieuwsbrief</div>
               <div className="dashboard-home-card-desc">Nieuws items schrijven & beheren.</div>
+            </button>
+            <button className="dashboard-home-card" onClick={() => setDashboardView('rules')}>
+              <span className="home-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h6"/></svg>
+              </span>
+              <div className="dashboard-home-card-title">Spelregels</div>
+              <div className="dashboard-home-card-desc">Beheer spelvarianten, zichtbaarheid & uitleg.</div>
             </button>
           </div>
         </div>
@@ -1273,6 +1281,11 @@ const Dashboard: React.FC = () => {
             </div>
           )}
         </>
+      )}
+      {dashboardView === 'rules' && (
+        <div style={{padding:'32px 24px'}}>
+          <RulesAdmin embedded />
+        </div>
       )}
       {/* Menu Editor View */}
       {dashboardView === 'menu' && (

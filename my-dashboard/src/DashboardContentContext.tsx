@@ -18,6 +18,7 @@ const defaultContent = {
     { label: 'Menu', path: '/menu' },
   { label: 'Contact', path: '/contact' },
   { label: 'Nieuws', path: '/nieuws' },
+  { label: 'Spelregels', path: '/spelregels' },
   ],
 };
 
@@ -28,6 +29,9 @@ function safeContent(raw: any) {
   // Guarantee Nieuws link exists (avoid older saved content overwriting it)
   const hasNews = c.navLinks.some((l: any) => l && (l.path === '/nieuws' || l.label?.toLowerCase() === 'nieuws'));
   if (!hasNews) c.navLinks.push({ label: 'Nieuws', path: '/nieuws' });
+  // Guarantee Spelregels link exists
+  const hasRules = c.navLinks.some((l: any) => l && (l.path === '/spelregels' || l.label?.toLowerCase() === 'spelregels'));
+  if (!hasRules) c.navLinks.push({ label: 'Spelregels', path: '/spelregels' });
   return c;
 }
 

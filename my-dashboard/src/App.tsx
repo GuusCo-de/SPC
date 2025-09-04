@@ -5,6 +5,8 @@ import Menu from './pages/Menu';
 import Contact from './pages/Contact';
 import Dashboard from './pages/Dashboard';
 import NewsPublic from './pages/NewsPublic';
+import Rules from './pages/Rules';
+import RulesAdmin from './pages/RulesAdmin';
 import { DashboardContentProvider, useDashboardContent } from './DashboardContentContext';
 import DockNav from './components/DockNav';
 
@@ -140,7 +142,9 @@ const AppContent = () => {
               <Route path="/menu" element={<Menu />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/nieuws" element={<NewsPublic />} />
+              <Route path="/spelregels" element={<Rules />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard/rules" element={<RulesAdmin />} />
             </Routes>
           </main>
         </>

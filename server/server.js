@@ -158,6 +158,54 @@ app.post('/api/backgrounds/upload', upload.array('backgrounds', 15), (req, res) 
   }
 });
 
+// ====== Game Rules Endpoints (content.gameRules) ======
+function readRulesArray() {
+  const data = readContent();
+  if (!data) return [];
+  if (!data.content.gameRules) data.content.gameRules = [];
+  return data.content.gameRules;
+}
+
+function writeRulesArray(rulesArray) {
+  const data = readContent() || { content: {}, history: [] };
+  data.content.gameRules = rulesArray;
+  writeContent(data);
+  return data.content.gameRules;
+}
+
+// Get all rules
+app.get('/api/rules', (_req, res) => {
+  try {
+    const rules = readRulesArray();
+    res.json(rules);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read rules', details: err.message });
+  }
+});
+
+// Replace rules array (bulk save)
+app.post('/api/rules', (req, res) => {
+  try {
+    const rules = Array.isArray(req.body) ? req.body : req.body.rules;
+    if (!Array.isArray(rules)) return res.status(400).json({ error: 'Expected array of rules' });
+    const sanitized = rules.map(r => ({
+      id: r.id || (Date.now().toString(36)+Math.random().toString(36).slice(2,8)),
+      title: String(r.title || '').trim(),
+      type: String(r.type || 'Pool').trim(),
+      shortDescription: String(r.shortDescription || r.korteBeschrijving || '').trim(),
+      details: Array.isArray(r.details) ? r.details.map(d => String(d)) : [],
+      rules: Array.isArray(r.rules) ? r.rules.map(d => String(d)) : [],
+      tips: Array.isArray(r.tips) ? r.tips.map(d => String(d)) : [],
+      enabled: r.enabled !== false,
+      order: typeof r.order === 'number' ? r.order : 0,
+    }));
+    const saved = writeRulesArray(sanitized.sort((a,b)=> (a.order||0)-(b.order||0)));
+    res.json(saved);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save rules', details: err.message });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Dashboard backend running on http://localhost:${PORT}`);
