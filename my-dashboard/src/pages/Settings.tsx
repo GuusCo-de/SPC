@@ -16,18 +16,14 @@ const Settings: React.FC<SettingsProps> = ({ content, setContent }) => {
   const fileInputRef = useRef<HTMLInputElement|null>(null);
   const colorBtnRef = useRef<HTMLButtonElement|null>(null);
   const [showColorPopup, setShowColorPopup] = useState(false);
+  const [showCustomColor, setShowCustomColor] = useState(false);
 
+  // Escape key sluit modal
   useEffect(()=>{
-    function onDoc(e:MouseEvent){
-      if(showColorPopup){
-        if(!colorBtnRef.current) return setShowColorPopup(false);
-        const pop = document.querySelector('.settings-color-popup');
-        if(pop && (pop.contains(e.target as Node) || colorBtnRef.current.contains(e.target as Node))) return;
-        setShowColorPopup(false);
-      }
-    }
-    document.addEventListener('mousedown',onDoc);
-    return ()=>document.removeEventListener('mousedown',onDoc);
+    if(!showColorPopup) return;
+    function onKey(e:KeyboardEvent){ if(e.key==='Escape') setShowColorPopup(false); }
+    document.addEventListener('keydown', onKey);
+    return ()=>document.removeEventListener('keydown', onKey);
   },[showColorPopup]);
 
   function update<K extends keyof typeof data>(key: K, value: (typeof data)[K]) {
@@ -86,26 +82,42 @@ const Settings: React.FC<SettingsProps> = ({ content, setContent }) => {
             >
               <span style={{position:'absolute',inset:0,borderRadius:10,boxShadow:'inset 0 0 0 2px #ffffff22'}}></span>
             </button>
-            {showColorPopup && (
-              <div className="settings-color-popup" style={{position:'absolute',top:'100%',marginTop:8,zIndex:60,background:'#1d2731',border:'1px solid #2d3a45',borderRadius:12,padding:14,width:240,boxShadow:'0 10px 28px -6px rgba(0,0,0,.45)'}}>
-                <h4 style={{margin:'0 0 8px',fontSize:13,fontWeight:600,letterSpacing:.5,textTransform:'uppercase',opacity:.75}}>Palette</h4>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:6}}>
-                  {['#00b894','#0b5bd7','#ff9800','#ef4444','#8e44ad','#16a085','#2c3e50','#e91e63','#9c27b0','#3f51b5','#4caf50','#795548'].map(c=> (
-                    <button key={c} onClick={()=>{update('mainColor', c); setShowColorPopup(false);}} style={{width:30,height:30,background:c,border:'none',borderRadius:8,cursor:'pointer',boxShadow:c===data.mainColor?'0 0 0 3px #fff inset,0 0 0 1px #000':'0 0 0 1px #0005'}} aria-label={`Kies ${c}`}></button>
-                  ))}
-                </div>
-                <div style={{marginTop:12, display:'flex',flexDirection:'column',gap:6}}>
-                  <label style={{display:'flex',flexDirection:'column',fontSize:12,gap:4}}>
-                    <span style={{opacity:.8}}>Custom Hex</span>
-                    <input value={data.mainColor} onChange={e=>update('mainColor', e.target.value)} style={{background:'#111a22',border:'1px solid #324150',padding:'6px 8px',borderRadius:8,color:'#fff',fontFamily:'monospace'}} />
-                  </label>
-                  <input type="color" value={data.mainColor} onChange={e=>update('mainColor', e.target.value)} style={{height:34,border:'none',padding:0,background:'transparent',cursor:'pointer'}} />
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </section>
+      {showColorPopup && (
+        <div className="settings-color-modal-overlay" role="dialog" aria-modal="true" aria-label="Kies thema kleur" onMouseDown={e=>{ if(e.target === e.currentTarget) setShowColorPopup(false); }}>
+          <div className="settings-color-modal" role="document">
+            <div className="scm-head">
+              <h4>Kies Thema Kleur</h4>
+              <button type="button" className="scm-close" aria-label="Sluiten" onClick={()=>setShowColorPopup(false)}>×</button>
+            </div>
+            <div className="scm-section">
+              <div className="scm-grid">
+                {['#00b894','#0b5bd7','#ff9800','#ef4444','#8e44ad','#16a085','#2c3e50','#e91e63','#9c27b0','#3f51b5','#4caf50','#795548'].map(c=> (
+                  <button key={c} onClick={()=>{update('mainColor', c); setShowColorPopup(false);}} className={`scm-swatch${c===data.mainColor?' active':''}`} style={{background:c}} aria-label={`Kies ${c}`}></button>
+                ))}
+                <button type="button" aria-label="Aangepaste kleur" onClick={()=>setShowCustomColor(s=>!s)} className={`scm-swatch add${showCustomColor?' active':''}`} style={{background: showCustomColor ? data.mainColor : 'linear-gradient(135deg,#ff0080,#ff8c00,#ffe600,#33c200,#0096ff,#6a00ff,#ff00d4)'}}>
+                  <span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize: showCustomColor? '1.6rem':'2.2rem',fontWeight:600,color:'#fff',textShadow:'0 2px 6px #0007'}}>{showCustomColor? '×':'+'}</span>
+                </button>
+              </div>
+              {showCustomColor && (
+                <div className="scm-custom-inline">
+                  <label className="scm-label" style={{flex:1}}>
+                    <span style={{fontSize:10}}>HEX</span>
+                    <input value={data.mainColor} onChange={e=>update('mainColor', e.target.value)} className="scm-hex-input" />
+                  </label>
+                  <input type="color" value={data.mainColor} onChange={e=>update('mainColor', e.target.value)} style={{width:70,height:54,border:'none',background:'transparent',cursor:'pointer'}} />
+                  <button type="button" onClick={()=>{ setShowCustomColor(false); }} style={{background:'#0b5bd7',padding:'14px 20px',borderRadius:14,fontWeight:600}}>OK</button>
+                </div>
+              )}
+            </div>
+            <div className="scm-footer">
+              <button type="button" className="scm-close-btn" onClick={()=>setShowColorPopup(false)}>Gereed</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section style={{marginTop:'2rem'}}>
         <h3 style={{margin:'0 0 .75rem'}}>Achtergrondafbeeldingen</h3>

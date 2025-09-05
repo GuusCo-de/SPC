@@ -251,6 +251,21 @@ function withBlockIds(blocks: Omit<Block, 'id'>[]): Block[] {
   return blocks.map(b => ({ ...b, id: generateId() }));
 }
 
+// Complete lijst van standaard achtergrondafbeeldingen (alle /Images behalve 8Ball.png)
+const ALL_DASHBOARD_BACKGROUND_IMAGES = [
+  // '/Images/LogoSquare.png' bewust uitgesloten (wit logo gaf lege witte slide)
+  '/Images/SPC Capelle-3.jpg',
+  '/Images/SPC Capelle-4.jpg',
+  '/Images/SPC Capelle-6.jpg',
+  '/Images/SPC Capelle-7.jpg',
+  '/Images/SPC Capelle-9.jpg',
+  '/Images/SPC Capelle-11.jpg',
+  '/Images/SPC Capelle-12.jpg',
+  '/Images/SPC Capelle-13.jpg',
+  '/Images/SPC Capelle-13-2.jpg',
+  '/Images/SPC Capelle-18.jpg',
+];
+
 const defaultContent: DashboardContent = {
   heroTitle: 'Snooker Pool Centrum',
   heroSubtitle: 'Enjoy a modern pool lounge, specialty drinks, and a vibrant social scene.',
@@ -258,11 +273,8 @@ const defaultContent: DashboardContent = {
   infoText: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
   mainColor: '#00b894',
   accentColor: '#232526',
-  backgroundImages: [
-    'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/12/bc/33/4e/getlstd-property-photo.jpg?w=1200&h=-1&s=1',
-    'https://images.socialdeal.nl/bedrijf/pool-cafe-hart-van-utrecht-19062608564682.jpg',
-    'https://m-en.bredastudentapp.com/uploads/image/5c8252172a5ab06d94dfcd1e-large.jpg',
-  ],
+  // Gebruik nu alle afbeeldingen (excl. 8Ball.png) als standaard backgrounds
+  backgroundImages: [...ALL_DASHBOARD_BACKGROUND_IMAGES],
   logoText: 'SPC - Snooker Pool Centrum',
   navLinks: [
     { label: 'Home', path: '/' },
@@ -487,7 +499,23 @@ const Dashboard: React.FC = () => {
     (async () => {
       try {
         const data = await fetchDashboardData();
-        const loaded = ensureBlockIds(data.content);
+  let loaded = ensureBlockIds(data.content);
+        // Voeg ontbrekende standaard afbeeldingen toe (alle nieuwe behalve 8Ball.png) zodat ze altijd zichtbaar zijn in het dashboard
+        if (Array.isArray(loaded.backgroundImages)) {
+          const missing = ALL_DASHBOARD_BACKGROUND_IMAGES.filter(img => !loaded.backgroundImages.includes(img));
+          if (missing.length) loaded = { ...loaded, backgroundImages: [...loaded.backgroundImages, ...missing] };
+        } else {
+          loaded = { ...loaded, backgroundImages: [...ALL_DASHBOARD_BACKGROUND_IMAGES] };
+        }
+  // Opschonen: verwijder lege items en duplicaten (placeholder links mogen blijven)
+        loaded = {
+          ...loaded,
+          backgroundImages: Array.from(new Set(
+            (loaded.backgroundImages || [])
+              .filter(Boolean)
+              .filter(img => img !== '/Images/LogoSquare.png')
+          ))
+        };
         lastSavedContentRef.current = loaded; // establish baseline BEFORE marking loaded
         setContent(loaded);
         setHistory(data.history || []);
@@ -935,6 +963,29 @@ const Dashboard: React.FC = () => {
 
   // Determine if there are unsaved changes for global save bar
   const unsaved = JSON.stringify(stripTransient(content)) !== JSON.stringify(stripTransient(lastSavedContentRef.current));
+  // Nieuwe logica voor save bar zichtbaarheid
+  const [showSaveBar, setShowSaveBar] = useState(false);
+  const saveBarTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    // Altijd tonen als er onopgeslagen wijzigingen zijn of tijdens opslaan
+    if (unsaved || saveStatus === 'saving') {
+      if (saveBarTimerRef.current) {
+        clearTimeout(saveBarTimerRef.current);
+        saveBarTimerRef.current = null;
+      }
+      setShowSaveBar(true);
+      return;
+    }
+    // Als net opgeslagen (status 'saved' en geen unsaved) -> 3s zichtbaar laten en dan verbergen
+    if (!unsaved && saveStatus === 'saved' && showSaveBar) {
+      if (saveBarTimerRef.current) clearTimeout(saveBarTimerRef.current);
+      saveBarTimerRef.current = window.setTimeout(() => {
+        setShowSaveBar(false);
+        saveBarTimerRef.current = null;
+      }, 3000);
+    }
+  }, [unsaved, saveStatus, showSaveBar]);
+  useEffect(() => () => { if (saveBarTimerRef.current) clearTimeout(saveBarTimerRef.current); }, []);
   // Any modal/popup open? (history, note, edit note, block delete, clear all, color dropdown, menu overlay)
   const anyModalOpen = showNoteModal || !!editNoteModal || !!blockToDelete || showClearAllConfirm || mainColorDropdownOpen || accentColorDropdownOpen || menuOverlayActive;
   // Section-level change detection (lightweight) for display chips
@@ -965,6 +1016,8 @@ const Dashboard: React.FC = () => {
 
   // Add backup card and handler to request backup from backend and trigger JSON download.
   const [creatingBackup, setCreatingBackup] = useState(false);
+  const [importingBackup, setImportingBackup] = useState(false);
+  const importBackupInputRef = useRef<HTMLInputElement | null>(null);
   const createAndDownloadBackup = async () => {
     if (creatingBackup) return;
     setCreatingBackup(true);
@@ -986,6 +1039,54 @@ const Dashboard: React.FC = () => {
       alert('Backup mislukt: ' + e.message);
     } finally {
       setCreatingBackup(false);
+    }
+  };
+  const triggerImportBackup = () => {
+    if (importingBackup) return;
+    if (importBackupInputRef.current) importBackupInputRef.current.value = '';
+    importBackupInputRef.current?.click();
+  };
+  const handleImportBackupFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportingBackup(true);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      // Accept either full structure {content, history} or just content object.
+      let newContent: DashboardContent | null = null;
+      let newHistory: DashboardContent[] = [];
+      if (parsed.content) {
+        newContent = ensureBlockIds(parsed.content);
+        if (Array.isArray(parsed.history) && parsed.history.length) {
+          newHistory = parsed.history.map((h: any) => ensureBlockIds(h));
+        }
+      } else if (parsed.heroTitle || parsed.pages) {
+        newContent = ensureBlockIds(parsed as DashboardContent);
+      }
+      if (!newContent) throw new Error('Onbekend backup formaat');
+      if (!newHistory.length) {
+        // Synthesize history with version meta
+        const meta = { version: '1', timestamp: Date.now(), name: 'Imported', note: 'Geïmporteerde backup' };
+        newContent.__versionMeta = meta as any;
+        newHistory = [JSON.parse(JSON.stringify(newContent))];
+      }
+      // Ensure first history entry has meta
+      if (!newHistory[0].__versionMeta) {
+        newHistory[0].__versionMeta = { version: '1', timestamp: Date.now(), name: 'Imported' } as any;
+      }
+      await saveDashboardData({ content: newHistory[0], history: newHistory });
+      setContent(newHistory[0]);
+      setHistory(newHistory);
+      setActiveVersion(newHistory[0].__versionMeta?.version || '1');
+      lastSavedContentRef.current = { ...newHistory[0] } as DashboardContent;
+      setSaveStatus('saved');
+      setLastSavedAt(Date.now());
+      alert('Backup geïmporteerd.');
+    } catch (err: any) {
+      alert('Import mislukt: ' + err.message);
+    } finally {
+      setImportingBackup(false);
     }
   };
 
@@ -1035,14 +1136,23 @@ const Dashboard: React.FC = () => {
             </button>
             <button className="dashboard-home-card" onClick={() => setDashboardView('settings')}>
               <span className="home-card-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.26 0 .51-.06  .74-.17A1.65 1.65 0 0 0 10.4 3.1L10.5 3a2 2 0 0 1 3 0l.06.09c.14.23.33.43.55.57.23.11.48.17.74.17a1.65 1.65 0 0 0 1.51-1l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c0 .26.06.51.17.74.11.23.27.43.48.59.21.16.46.26.72.28H21a2 2 0 0 1 0 4h-.09c-.26 0-.51.06-.74.17-.23.14-.43.33-.57.55a1.65 1.65 0 0 0-.2.67z"/></svg>
+                {/* Strak symmetrisch tandwiel (8 segmenten) zonder vervorming */}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.07-.94l2.03-1.58a.5.5 0 0 0 .11-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.07 7.07 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.48-.42h-3.84a.5.5 0 0 0-.48.42l-.37 2.54c-.6.24-1.15.55-1.65.94l-2.38-.96a.5.5 0 0 0-.61.22L2.72 8.84a.5.5 0 0 0 .11.64l2.03 1.58c-.05.31-.07.65-.07.98 0 .31.02.63.07.94l-2.03 1.58a.5.5 0 0 0-.11.64l1.92 3.32c.14.24.43.34.68.23l2.39-.96c.5.39 1.05.72 1.65.94l.37 2.54c.05.24.24.42.48.42h3.84c.24 0 .43-.18.48-.42l.37-2.54c.6-.24 1.15-.55 1.65-.94l2.39.96c.25.1.54 0 .67-.23l1.93-3.32a.5.5 0 0 0-.12-.64l-2.02-1.58Z" />
+                  <circle cx="12" cy="12" r="3.25" />
+                </svg>
               </span>
               <div className="dashboard-home-card-title">Instellingen</div>
               <div className="dashboard-home-card-desc">Thema, openingstijden, tarieven & contact.</div>
             </button>
             <button className="dashboard-home-card" onClick={() => setDashboardView('history')}>
               <span className="home-card-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><path d="M3 3v6h6"/><path d="M12 7v6l3.5 2"/></svg>
+                {/* Geschiedenis klok met opening en pijl */}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 3v5h5" />
+                  <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+                  <path d="M12 7v5l4 2" />
+                </svg>
               </span>
               <div className="dashboard-home-card-title">Versies</div>
               <div className="dashboard-home-card-desc">Geschiedenis bekijken & terugzetten.</div>
@@ -1054,6 +1164,14 @@ const Dashboard: React.FC = () => {
               <div className="dashboard-home-card-title">Backup</div>
               <div className="dashboard-home-card-desc">Download actuele content JSON{creatingBackup ? '…' : ''}</div>
             </button>
+            <button className="dashboard-home-card" onClick={triggerImportBackup} disabled={importingBackup}>
+              <span className="home-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21V7"/><path d="M5 14l7-7 7 7"/><path d="M5 3h14"/></svg>
+              </span>
+              <div className="dashboard-home-card-title">Importeer Backup</div>
+              <div className="dashboard-home-card-desc">Laad eerder opgeslagen JSON{importingBackup ? '…' : ''}</div>
+            </button>
+            <input ref={importBackupInputRef} type="file" accept="application/json,.json" style={{display:'none'}} onChange={handleImportBackupFile} />
           </div>
         </div>
       )}
@@ -1268,35 +1386,37 @@ const Dashboard: React.FC = () => {
         </div>
       )}
   {/* Globale save bar: altijd tonen op niet-home en op home alleen bij unsaved */}
-      {(dashboardView !== 'home' && dashboardView !== 'history' || (unsaved && dashboardView === 'home')) && !anyModalOpen && (() => {
-        const statusVariant = saveStatus === 'saving'
-          ? 'saving'
-          : unsaved
-            ? 'unsaved'
-            : !lastSavedAt
-              ? 'never'
-              : 'saved';
+      {showSaveBar && !anyModalOpen && (() => {
+        const variant = saveStatus === 'saving' ? 'saving' : unsaved ? 'unsaved' : 'saved';
+        const labelMap: Record<string,string> = {
+          saving: 'Bezig met opslaan',
+          unsaved: 'Niet opgeslagen wijzigingen',
+          saved: 'Opgeslagen'
+        };
         return (
-          <div className={`global-save-bar mini-dock compact-only${statusVariant==='unsaved' ? ' dirty' : ''}${statusVariant==='saving' ? ' saving' : ''}`} role="status" aria-live="polite">
-            <span className={`mini-status-indicator${statusVariant==='unsaved' ? ' dirty' : statusVariant==='saving' ? ' saving' : ' clean'}`} aria-hidden="true" />
-            <span className="mini-dock-text" aria-label={statusVariant === 'saving' ? 'Bezig met opslaan' : statusVariant === 'unsaved' ? 'Niet opgeslagen wijzigingen' : statusVariant === 'never' ? 'Nog niet opgeslagen' : 'Alles opgeslagen'}>
-              {statusVariant === 'saving' && 'Opslaan…'}
-              {statusVariant === 'unsaved' && 'Niet opgeslagen'}
-              {statusVariant === 'saved' && 'Opgeslagen'}
-              {statusVariant === 'never' && 'Nog niet opgeslagen'}
-            </span>
-            {(statusVariant === 'unsaved' || statusVariant === 'saving') && (
+          <div className={`save-dock ${variant}`} role="status" aria-live="polite">
+            <span className={`sbb-dot ${variant}`} aria-hidden="true" />
+            <span className="sbb-text" title={labelMap[variant]}>{variant === 'saving' ? 'Opslaan…' : (variant === 'unsaved' ? 'Niet opgeslagen' : 'Opgeslagen')}</span>
+            <span className="sbb-flex-spacer" />
+            {(unsaved || saveStatus === 'saving') && (
               <button
                 type="button"
-                className="gsb-save-btn mini"
+                className="sbb-btn sbb-icon-btn"
                 disabled={saveStatus==='saving' || !unsaved}
                 onClick={handleSave}
+                aria-label={saveStatus==='saving' ? 'Bezig met opslaan' : 'Opslaan'}
+                title={saveStatus==='saving' ? 'Bezig met opslaan' : 'Opslaan'}
               >
-                {saveStatus==='saving' ? 'Opslaan…' : 'Opslaan'}
+                {saveStatus==='saving' ? (
+                  <span className="sbb-btn-spinner" aria-hidden="true" />
+                ) : (
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--main,#0ea5e9)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M12 3v12" />
+                    <path d="M7 11l5 5 5-5" />
+                    <path d="M5 20h14" />
+                  </svg>
+                )}
               </button>
-            )}
-            {statusVariant === 'saved' && (
-              <div className="mini-pill" aria-label="Opgeslagen">Opgeslagen</div>
             )}
           </div>
         );
