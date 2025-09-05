@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useDashboardContent } from '../DashboardContentContext';
+import './SettingsMobile.css';
 
 interface OpeningItem { d: string; v: string; }
 interface RateItem { label: string; price: string; }
@@ -59,9 +60,6 @@ const Settings: React.FC<SettingsProps> = ({ content, setContent }) => {
 
   return (
     <div style={{ padding: '2rem 1.5rem 4rem', maxWidth: 1060 }}>
-      <h2 style={{marginTop:0}}>Instellingen</h2>
-      <p style={{marginTop:0}}>Beheer thema, achtergrondafbeeldingen, openingstijden, tarieven en contactgegevens.</p>
-
       <section style={{marginTop:'2rem'}}>
         <h3 style={{margin:'0 0 .75rem'}}>Site Basis</h3>
         <div style={{display:'flex',flexWrap:'wrap',gap:20}}>
@@ -137,29 +135,33 @@ const Settings: React.FC<SettingsProps> = ({ content, setContent }) => {
 
       <section style={{marginTop:'2.5rem'}}>
         <h3 style={{margin:'0 0 .75rem'}}>Openingstijden</h3>
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        <div className="edit-list">
           {opening.map((o,i)=>(
-            <div key={i} style={{display:'flex',gap:8,alignItems:'center'}}>
-              <input value={o.d} onChange={e=>updateOpening(i,{d:e.target.value})} style={{flex:'0 0 130px'}} />
-              <input value={o.v} onChange={e=>updateOpening(i,{v:e.target.value})} style={{flex:1}} />
-              <button type="button" onClick={()=>removeOpening(i)} aria-label="Verwijderen" style={{padding:'4px 8px'}}>×</button>
+            <div key={i} className="edit-row">
+              <div className="row-fields">
+                <input value={o.d} onChange={e=>updateOpening(i,{d:e.target.value})} placeholder="Dag" aria-label={`Dag ${i+1}`} className="small" />
+                <input value={o.v} onChange={e=>updateOpening(i,{v:e.target.value})} placeholder="00:00 – 00:00" aria-label={`Tijd ${i+1}`} />
+              </div>
+              <button type="button" onClick={()=>removeOpening(i)} aria-label="Verwijderen" className="remove">×</button>
             </div>
           ))}
-          <button type="button" onClick={addOpening} style={{alignSelf:'flex-start'}}>+ Regel toevoegen</button>
+          <button type="button" onClick={addOpening} className="add-btn">+ Regel toevoegen</button>
         </div>
       </section>
 
       <section style={{marginTop:'2.5rem'}}>
         <h3 style={{margin:'0 0 .75rem'}}>Tafel Tarieven</h3>
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        <div className="edit-list">
           {rates.map((r,i)=>(
-            <div key={i} style={{display:'flex',gap:8,alignItems:'center'}}>
-              <input value={r.label} onChange={e=>updateRate(i,{label:e.target.value})} style={{flex:'0 0 200px'}} />
-              <input value={r.price} onChange={e=>updateRate(i,{price:e.target.value})} style={{flex:1}} />
-              <button type="button" onClick={()=>removeRate(i)} aria-label="Verwijderen" style={{padding:'4px 8px'}}>×</button>
+            <div key={i} className="edit-row">
+              <div className="row-fields">
+                <input value={r.label} onChange={e=>updateRate(i,{label:e.target.value})} placeholder="Naam" aria-label={`Tarief naam ${i+1}`} className="medium" />
+                <input value={r.price} onChange={e=>updateRate(i,{price:e.target.value})} placeholder="€0" aria-label={`Tarief prijs ${i+1}`} className="price" />
+              </div>
+              <button type="button" onClick={()=>removeRate(i)} aria-label="Verwijderen" className="remove">×</button>
             </div>
           ))}
-          <button type="button" onClick={addRate} style={{alignSelf:'flex-start'}}>+ Tarief toevoegen</button>
+          <button type="button" onClick={addRate} className="add-btn">+ Tarief toevoegen</button>
         </div>
       </section>
 
