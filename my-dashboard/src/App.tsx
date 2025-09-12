@@ -136,11 +136,11 @@ const AppContent = () => {
           </div>
         </div>
       )}
-      {!loading && (
+    {!loading && (
         <>
-          {/* Verberg globale site navigatie op dashboard */}
-          {!window.location.pathname.startsWith('/dashboard') && <DockNav />}
-      <main className={window.location.pathname.startsWith('/dashboard') ? 'no-dock-pad' : ''}>
+          {/* Verberg globale site navigatie op dashboard en login */}
+      {!window.location.pathname.startsWith('/dashboard') && window.location.pathname !== '/login' && <DockNav />}
+    <main className={`${window.location.pathname.startsWith('/dashboard') ? 'no-dock-pad' : ''} ${window.location.pathname === '/login' ? 'login-main' : ''}`}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/menu" element={<Menu />} />
@@ -152,7 +152,7 @@ const AppContent = () => {
         <Route path="/dashboard/rules" element={<ProtectedRoute><RulesAdmin /></ProtectedRoute>} />
             </Routes>
           </main>
-          <Footer />
+          {window.location.pathname !== '/login' && <Footer />}
         </>
       )}
     </div>

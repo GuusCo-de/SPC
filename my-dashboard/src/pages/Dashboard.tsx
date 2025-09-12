@@ -1087,8 +1087,13 @@ const Dashboard: React.FC = () => {
           </button>
         )}
         <h1>{pageTitle}</h1>
-  <div className="header-spacer" />
-  <button className="btn subtle" onClick={logout} title="Uitloggen">Uitloggen</button>
+        <button className="header-logout-btn" onClick={logout} title="Uitloggen" aria-label="Uitloggen" type="button">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M10 17l-1.5 0c-1.4 0-2.5-1.1-2.5-2.5v-5C6 8.1 7.1 7 8.5 7H10"/>
+            <path d="M14 15l3-3-3-3"/>
+            <path d="M7 12h10"/>
+          </svg>
+        </button>
       </header>
       {dashboardView === 'home' && (
         <div className="dashboard-home-select">

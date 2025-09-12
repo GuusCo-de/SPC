@@ -22,20 +22,27 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="info-section" style={{ background: 'transparent' }}>
-      <form className="modal-content" onSubmit={handleSubmit} style={{ maxWidth: 420 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 12 }}>Inloggen</h2>
-        <label>Gebruikersnaam
-          <input value={username} onChange={e=>setUsername(e.target.value)} required />
-        </label>
-        <label>Wachtwoord
-          <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
-        </label>
-        {error && <div style={{ color: '#d32f2f', marginBottom: 10 }}>{error}</div>}
-        <div style={{ display:'flex', gap: 8, justifyContent:'flex-end' }}>
-          <button type="submit" className="btn primary" disabled={loading}>{loading ? 'Inloggen...' : 'Inloggen'}</button>
+    <div className="login-shell">
+      <div className="login-card">
+        <div className="login-header">
+          <img className="login-brand" src="/guuscode-logo-dark.png" alt="GuusCode" />
+          <span className="login-sep" aria-hidden="true"></span>
+          <div className="login-title">
+            <h2>Inloggen</h2>
+            <p className="login-sub">Toegang tot het dashboard</p>
+          </div>
         </div>
-      </form>
+        <form onSubmit={handleSubmit} className="login-form">
+          <label>Gebruikersnaam
+            <input value={username} onChange={e=>setUsername(e.target.value)} required placeholder="Gebruikersnaam" />
+          </label>
+          <label>Wachtwoord
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required placeholder="Wachtwoord" />
+          </label>
+          {error && <div className="login-error">{error}</div>}
+          <button type="submit" className="login-btn" disabled={loading}>{loading ? 'Inloggen...' : 'Inloggen'}</button>
+        </form>
+      </div>
     </div>
   );
 };
