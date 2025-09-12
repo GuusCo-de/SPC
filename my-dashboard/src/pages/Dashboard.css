@@ -1,4 +1,7 @@
-/* Global Save Bar */
+.no-dock-pad {
+  padding: 0 !important;
+}
+
 .global-save-bar {
   position: fixed;
   bottom: 22px;
@@ -1486,20 +1489,24 @@
   border-bottom: none;
 }
 
-.dashboard-root .modal {
+.dashboard-root .modal,
+.modal {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(40, 44, 52, 0.18);
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2600;
 }
 
-.dashboard-root .modal-content {
+.dashboard-root .modal-content,
+.modal-content {
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 24px #23252622;
@@ -1508,15 +1515,18 @@
   max-width: 90vw;
 }
 
-.dashboard-root .modal-content h3 {
+.dashboard-root .modal-content h3,
+.modal-content h3 {
   margin-top: 0;
 }
 
-.dashboard-root .modal-content label {
+.dashboard-root .modal-content label,
+.modal-content label {
   margin-bottom: 18px;
 }
 
-.dashboard-root .modal-content button {
+.dashboard-root .modal-content button,
+.modal-content button {
   margin-top: 14px;
 }
 
@@ -2789,7 +2799,8 @@
 .menu-add-item-btn {
   all: unset;
   cursor: pointer;
-  background: linear-gradient(135deg, var(--main, #2563eb), #1d4ed8);
+  /* Force blue for menu add button regardless of theme */
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #fff;
   height: 40px;
   padding: 0 18px;
@@ -2800,7 +2811,7 @@
   border-radius: 14px;
   font-size: .9rem;
   font-weight: 600;
-  box-shadow: 0 8px 26px -10px rgba(var(--main-rgb, 37, 99, 235), 0.6), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  box-shadow: 0 8px 26px -10px rgba(37, 99, 235, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
   transition: background .35s, transform .35s, box-shadow .35s;
   letter-spacing: .5px;
   position: relative;
@@ -2824,7 +2835,7 @@
 
 .menu-add-item-btn:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 38px -14px rgba(var(--main-rgb, 37, 99, 235), 0.65), 0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+  box-shadow: 0 16px 38px -14px rgba(37, 99, 235, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.55) inset;
 }
 
 .menu-add-item-btn:active {
@@ -2937,7 +2948,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 900;
+  z-index: 2500;
   backdrop-filter: blur(4px);
 }
 
@@ -2973,9 +2984,26 @@
 
 .menu-popup input:focus {
   outline: none;
-  border-color: var(--main, #2563eb);
-  box-shadow: 0 0 0 2px rgba(var(--main-rgb, 37, 99, 235), 0.25);
+  /* Force blue focus ring in modal */
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
   background: #fff;
+}
+
+/* Ensure primary actions in the add-item modal are blue */
+.menu-popup .btn.primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: none;
+  box-shadow: 0 8px 24px -10px rgba(37, 99, 235, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+.menu-popup .btn.primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  box-shadow: 0 12px 34px -12px rgba(37, 99, 235, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+.menu-popup .btn.primary:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 3px;
 }
 
 .menu-popup-actions {

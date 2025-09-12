@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth, authHeader } from '../AuthContext';
+import ReactDOM from 'react-dom';
 import RulesAdmin from './RulesAdmin';
 import Settings from './Settings';
 import News from './News';
@@ -55,6 +57,12 @@ const MENU_CATEGORY_LABELS: Record<string,string> = {
   Cocktails: 'Cocktails',
   Desserts: 'Nagerechten',
   Other: 'Overig'
+};
+
+// Simple portal for full-viewport overlays (avoids clipping by transformed ancestors)
+const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  if (typeof document === 'undefined') return null;
+  return ReactDOM.createPortal(children as any, document.body);
 };
 
 function MenuPanel({ menu, onChange, mainColor, accentColor, hideTitle, setOverlayActive }: {
@@ -213,30 +221,34 @@ function MenuPanel({ menu, onChange, mainColor, accentColor, hideTitle, setOverl
       )}
   {/* Standalone menu save removed; use global save bar */}
       {addPopup && (
-        <div className="menu-popup-overlay" role="dialog" aria-modal="true">
-          <form onSubmit={handleAddPopupSubmit} className="menu-popup">
-            <h3>Toevoegen aan {addPopup}</h3>
-            <input name="name" value={addFields.name || ''} onChange={e => setAddFields(f => ({ ...f, name: e.target.value }))} placeholder="Naam" required autoFocus />
-            <input name="price" value={addFields.price || ''} onChange={e => { const val = e.target.value.replace(/[^\d.]/g, ''); setAddFields(f => ({ ...f, price: val })); }} placeholder="Prijs" required />
-            <input name="description" value={addFields.description || ''} onChange={e => setAddFields(f => ({ ...f, description: e.target.value }))} placeholder="Beschrijving" />
-            <div className="menu-popup-actions">
-              <button type="submit" className="btn primary">Toevoegen</button>
-              <button type="button" onClick={closeAddPopup} className="btn subtle">Annuleren</button>
-            </div>
-          </form>
-        </div>
+        <Portal>
+          <div className="menu-popup-overlay" role="dialog" aria-modal="true" onMouseDown={e => { if (!(e.target as HTMLElement).closest('.menu-popup')) closeAddPopup(); }}>
+            <form onSubmit={handleAddPopupSubmit} className="menu-popup" role="document" onMouseDown={e => e.stopPropagation()}>
+              <h3>Toevoegen aan {addPopup}</h3>
+              <input name="name" value={addFields.name || ''} onChange={e => setAddFields(f => ({ ...f, name: e.target.value }))} placeholder="Naam" required autoFocus />
+              <input name="price" value={addFields.price || ''} onChange={e => { const val = e.target.value.replace(/[^\d.]/g, ''); setAddFields(f => ({ ...f, price: val })); }} placeholder="Prijs" required />
+              <input name="description" value={addFields.description || ''} onChange={e => setAddFields(f => ({ ...f, description: e.target.value }))} placeholder="Beschrijving" />
+              <div className="menu-popup-actions">
+                <button type="submit" className="btn primary">Toevoegen</button>
+                <button type="button" onClick={closeAddPopup} className="btn subtle">Annuleren</button>
+              </div>
+            </form>
+          </div>
+        </Portal>
       )}
       {confirmRemove && (
-        <div className="menu-popup-overlay" role="alertdialog" aria-modal="true">
-          <div className="menu-popup">
-            <h3>Bevestig verwijderen</h3>
-            <p>Weet je zeker dat je {confirmRemove.multi ? 'alle geselecteerde items' : 'dit item'} wilt verwijderen?</p>
-            <div className="menu-popup-actions">
-              <button onClick={confirmRemoveAction} className="btn danger">Ja, verwijderen</button>
-              <button onClick={() => setConfirmRemove(null)} className="btn subtle">Annuleren</button>
+        <Portal>
+          <div className="menu-popup-overlay" role="alertdialog" aria-modal="true" onMouseDown={e => { if (!(e.target as HTMLElement).closest('.menu-popup')) setConfirmRemove(null); }}>
+            <div className="menu-popup" role="document" onMouseDown={e => e.stopPropagation()}>
+              <h3>Bevestig verwijderen</h3>
+              <p>Weet je zeker dat je {confirmRemove.multi ? 'alle geselecteerde items' : 'dit item'} wilt verwijderen?</p>
+              <div className="menu-popup-actions">
+                <button onClick={confirmRemoveAction} className="btn danger">Ja, verwijderen</button>
+                <button onClick={() => setConfirmRemove(null)} className="btn subtle">Annuleren</button>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );
@@ -332,10 +344,10 @@ async function fetchDashboardData(): Promise<DashboardAPIResponse> {
   return await res.json();
 }
 
-async function saveDashboardData(data: { content: DashboardContent; history: DashboardContent[] }): Promise<any> {
+async function saveDashboardData(data: { content: DashboardContent; history: DashboardContent[] }, token?: string | null): Promise<any> {
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeader(token) },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to save dashboard content');
@@ -366,6 +378,7 @@ function ensureBlockIds(content: DashboardContent): DashboardContent {
 
 
 const Dashboard: React.FC = () => {
+  const { token, logout } = useAuth();
   // --- Main dashboard navigation ---
   // View state: initial home chooser with 3 large buttons
   const [dashboardView, setDashboardView] = useState<'home'|'page'|'menu'|'newsletter'|'rules'|'settings'|'history'>('home');
@@ -386,8 +399,6 @@ const Dashboard: React.FC = () => {
   const [revertedContent, setRevertedContent] = useState<DashboardContent|null>(null);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteModalContent, setNoteModalContent] = useState<{title: string, note: string, version: string} | null>(null);
-  // --- Edit note/title modal state ---
-  const [editNoteModal, setEditNoteModal] = useState<{idx: number, name: string, note: string, version: string}|null>(null);
   const [justReverted, setJustReverted] = useState(false);
   // Add a ref to store the last saved content
   const lastSavedContentRef = useRef(content);
@@ -554,12 +565,12 @@ const Dashboard: React.FC = () => {
         if (files.length) {
           const form = new FormData();
           files.forEach(f => form.append('backgrounds', f));
-          let r = await fetch(`${BACKEND_API_URL}/api/backgrounds/upload`, { method: 'POST', body: form });
+          let r = await fetch(`${BACKEND_API_URL}/api/backgrounds/upload`, { method: 'POST', headers: { ...authHeader(token) }, body: form });
           if (r.status === 404) {
             // fallback to news upload
             const form2 = new FormData();
             files.forEach(f => form2.append('images', f));
-            r = await fetch(`${BACKEND_API_URL}/api/news/upload`, { method: 'POST', body: form2 });
+            r = await fetch(`${BACKEND_API_URL}/api/news/upload`, { method: 'POST', headers: { ...authHeader(token) }, body: form2 });
           }
           if (r.ok) {
             const data = await r.json();
@@ -587,12 +598,12 @@ const Dashboard: React.FC = () => {
       }
     }
     setSaveStatus('saving');
-    const nextVer = getNextMainVersion(history);
+  const nextVer = getNextMainVersion(history);
     const meta = { version: nextVer, timestamp: Date.now(), name: versionName || '', note: versionNote || '' };
     const contentWithMeta = { ...cleanedContent, __versionMeta: meta };
     const newHistory = [{ ...contentWithMeta }, ...history].slice(0, HISTORY_LIMIT);
     try {
-      await saveDashboardData({ content: contentWithMeta, history: newHistory });
+      await saveDashboardData({ content: contentWithMeta, history: newHistory }, token);
       setActiveVersion(nextVer);
       setShowVersionModal(false);
       setVersionName('');
@@ -619,7 +630,7 @@ const Dashboard: React.FC = () => {
       newHistory.splice(deleteConfirmIdx, 1);
       // Save updated history and current content to backend
       try {
-        await saveDashboardData({ content, history: newHistory });
+  await saveDashboardData({ content, history: newHistory }, token);
         setHistory(newHistory);
         // If the deleted version was active, revert to the latest
         if (history[deleteConfirmIdx]?.__versionMeta?.version === activeVersion) {
@@ -644,7 +655,7 @@ const Dashboard: React.FC = () => {
     setContent(h);
     setActiveVersion(h.__versionMeta?.version || '1');
     try {
-      await saveDashboardData({ content: h, history });
+      await saveDashboardData({ content: h, history }, token);
     } catch {
       alert('Failed to revert. Please try again.');
     }
@@ -656,7 +667,7 @@ const Dashboard: React.FC = () => {
     const meta = { version: '1', timestamp: Date.now() };
     const contentWithMeta = { ...content, __versionMeta: meta };
     try {
-      await saveDashboardData({ content: contentWithMeta, history: [contentWithMeta] });
+      await saveDashboardData({ content: contentWithMeta, history: [contentWithMeta] }, token);
       setHistory([contentWithMeta]);
       setActiveVersion('1');
     } catch {
@@ -797,32 +808,7 @@ const Dashboard: React.FC = () => {
   const closeNoteModal = () => setShowNoteModal(false);
 
   // --- Edit note/title for a version ---
-  const openEditNoteModal = (idx: number) => {
-    const h = history[idx];
-    setEditNoteModal({
-      idx,
-      name: h.__versionMeta?.name || '',
-      note: h.__versionMeta?.note || '',
-      version: h.__versionMeta?.version || '',
-    });
-  };
-  const closeEditNoteModal = () => setEditNoteModal(null);
-  const saveEditNoteModal = () => {
-    if (editNoteModal) {
-      const newHistory = [...history];
-      const h = { ...newHistory[editNoteModal.idx] };
-      h.__versionMeta = {
-        ...h.__versionMeta,
-        name: editNoteModal.name,
-        note: editNoteModal.note,
-        version: h.__versionMeta?.version || '',
-        timestamp: h.__versionMeta?.timestamp || Date.now(),
-      };
-      newHistory[editNoteModal.idx] = h;
-      setHistory(newHistory);
-      closeEditNoteModal();
-    }
-  };
+  // Edit note modal removed with UI button
 
   // Add these handlers:
   const handleBgImage = (i: number, value: string) => setContent((prev) => {
@@ -850,12 +836,12 @@ const Dashboard: React.FC = () => {
       // Attempt primary backgrounds endpoint
       const bgForm = new FormData();
       Array.from(files).forEach(f => bgForm.append('backgrounds', f));
-      let up = await fetch(`${BACKEND_API_URL}/api/backgrounds/upload`, { method: 'POST', body: bgForm });
+      let up = await fetch(`${BACKEND_API_URL}/api/backgrounds/upload`, { method: 'POST', headers: { ...authHeader(token) }, body: bgForm });
       if (up.status === 404) {
         // Fallback: try using the existing news upload endpoint (older backend deploys)
         const newsForm = new FormData();
         Array.from(files).forEach(f => newsForm.append('images', f));
-        const up2 = await fetch(`${BACKEND_API_URL}/api/news/upload`, { method: 'POST', body: newsForm });
+        const up2 = await fetch(`${BACKEND_API_URL}/api/news/upload`, { method: 'POST', headers: { ...authHeader(token) }, body: newsForm });
         if (up2.ok) {
           const data2 = await up2.json();
             const urls2: string[] = (data2.urls || []).map((u: string) => u.startsWith('http') ? u : `${BACKEND_API_URL}${u}`);
@@ -987,7 +973,7 @@ const Dashboard: React.FC = () => {
   }, [unsaved, saveStatus, showSaveBar]);
   useEffect(() => () => { if (saveBarTimerRef.current) clearTimeout(saveBarTimerRef.current); }, []);
   // Any modal/popup open? (history, note, edit note, block delete, clear all, color dropdown, menu overlay)
-  const anyModalOpen = showNoteModal || !!editNoteModal || !!blockToDelete || showClearAllConfirm || mainColorDropdownOpen || accentColorDropdownOpen || menuOverlayActive;
+  const anyModalOpen = showNoteModal || !!blockToDelete || showClearAllConfirm || mainColorDropdownOpen || accentColorDropdownOpen || menuOverlayActive || showAddBlockMenu || deleteConfirmIdx !== null;
   // Section-level change detection (lightweight) for display chips
   const changedSections: string[] = [];
   if (unsaved) {
@@ -1022,7 +1008,7 @@ const Dashboard: React.FC = () => {
     if (creatingBackup) return;
     setCreatingBackup(true);
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/dashboard-content/backup`);
+  const res = await fetch(`${BACKEND_API_URL}/api/dashboard-content/backup`, { headers: { ...authHeader(token) } });
       if (!res.ok) throw new Error('Backup endpoint failed');
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Backup mislukt');
@@ -1101,7 +1087,8 @@ const Dashboard: React.FC = () => {
           </button>
         )}
         <h1>{pageTitle}</h1>
-        <div className="header-spacer" />
+  <div className="header-spacer" />
+  <button className="btn subtle" onClick={logout} title="Uitloggen">Uitloggen</button>
       </header>
       {dashboardView === 'home' && (
         <div className="dashboard-home-select">
@@ -1271,22 +1258,13 @@ const Dashboard: React.FC = () => {
                         <div className="dashboard-add-block-menu-wrapper">
                           <button
                             className="dashboard-add-block-btn"
-                            aria-label={showAddBlockMenu ? "Close Add Block Menu" : "Add Block"}
-                            title={showAddBlockMenu ? "Close Add Block Menu" : "Add Block"}
+                            aria-label={showAddBlockMenu ? "Sluit nieuw blok" : "Nieuw blok"}
+                            title={showAddBlockMenu ? "Sluit nieuw blok" : "Nieuw blok"}
                             type="button"
-                            onClick={() => setShowAddBlockMenu(open => !open)}
+                            onClick={() => setShowAddBlockMenu(true)}
                           >
-                            {showAddBlockMenu ? '×' : '+'}
+                            +
                           </button>
-                          {showAddBlockMenu && (
-                            <div className="dashboard-add-block-menu">
-                              <button onClick={() => { addBlock(selectedPage, 'heading'); setShowAddBlockMenu(false); }} className="dashboard-add-block-menu-item">Heading</button>
-                              <button onClick={() => { addBlock(selectedPage, 'text'); setShowAddBlockMenu(false); }} className="dashboard-add-block-menu-item">Text</button>
-                              <div className="dashboard-add-block-menu-divider" />
-                              <button onClick={() => { addBlock(selectedPage, 'divider'); setShowAddBlockMenu(false); }} className="dashboard-add-block-menu-item">Divider</button>
-                              <button onClick={() => { addBlock(selectedPage, 'quote'); setShowAddBlockMenu(false); }} className="dashboard-add-block-menu-item">Quote</button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -1299,24 +1277,26 @@ const Dashboard: React.FC = () => {
           {/* History & note modals moved outside page view */}
           {/* Confirmation modal for block delete */}
           {blockToDelete && (
-            <div className="modal modern-modal">
-              <div className="modal-content modern-modal-content">
-                <h3>Blok Verwijderen</h3>
-                <p>Weet je zeker dat je dit blok wilt verwijderen?</p>
-                <div className="modal-actions">
-                  <button
-                    className="btn danger"
-                    onClick={() => {
-                      removeBlock(blockToDelete.pageIdx, blockToDelete.blockIdx);
-                      setBlockToDelete(null);
-                    }}
-                  >
-                    Verwijder
-                  </button>
-                  <button className="btn subtle" onClick={() => setBlockToDelete(null)}>Annuleren</button>
+            <Portal>
+              <div className="modal modern-modal" role="dialog" aria-modal="true" onMouseDown={e => { if (!(e.target as HTMLElement).closest('.modal-content')) setBlockToDelete(null); }}>
+                <div className="modal-content modern-modal-content" role="document" onMouseDown={e => e.stopPropagation()}>
+                  <h3>Blok Verwijderen</h3>
+                  <p>Weet je zeker dat je dit blok wilt verwijderen?</p>
+                  <div className="modal-actions">
+                    <button
+                      className="btn danger"
+                      onClick={() => {
+                        removeBlock(blockToDelete.pageIdx, blockToDelete.blockIdx);
+                        setBlockToDelete(null);
+                      }}
+                    >
+                      Verwijder
+                    </button>
+                    <button className="btn subtle" onClick={() => setBlockToDelete(null)}>Annuleren</button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </Portal>
           )}
         </>
       )}
@@ -1350,7 +1330,6 @@ const Dashboard: React.FC = () => {
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:16,marginBottom:24}}>
             <h2 style={{margin:0,fontSize:'1.4rem'}}>Versie Geschiedenis</h2>
             <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
-              <button onClick={() => setDashboardView('home')} className="btn subtle">Terug</button>
               {history.length > 0 && <button onClick={() => setShowClearAllConfirm(true)} className="btn danger subtle">Alles verwijderen</button>}
             </div>
           </div>
@@ -1374,7 +1353,6 @@ const Dashboard: React.FC = () => {
                       ) : (
                         <button onClick={() => { handleRevert(h); }} className="btn primary">Terugzetten</button>
                       )}
-                      <button onClick={() => setEditNoteModal({ idx: i, name: h.__versionMeta?.name || '', note: h.__versionMeta?.note || '', version: v })} className="btn subtle">Wijzigen</button>
                       <button onClick={() => setDeleteConfirmIdx(i)} className="btn danger subtle">Verwijderen</button>
                     </div>
                   </div>
@@ -1386,7 +1364,7 @@ const Dashboard: React.FC = () => {
         </div>
       )}
   {/* Globale save bar: altijd tonen op niet-home en op home alleen bij unsaved */}
-      {showSaveBar && !anyModalOpen && (() => {
+  {showSaveBar && !anyModalOpen && (() => {
         const variant = saveStatus === 'saving' ? 'saving' : unsaved ? 'unsaved' : 'saved';
         const labelMap: Record<string,string> = {
           saving: 'Bezig met opslaan',
@@ -1422,72 +1400,108 @@ const Dashboard: React.FC = () => {
         );
       })()}
       {showClearAllConfirm && (
-        <div className="modal modern-modal">
-          <div className="modal-content modern-modal-content">
-            <h3>Alle Versies Verwijderen</h3>
-            <p>Weet je zeker dat je alle geschiedenis wilt verwijderen? Alleen de huidige versie blijft als v1.</p>
-            <div className="modal-actions">
-              <button onClick={() => { handleClearHistory(); setShowClearAllConfirm(false); if(dashboardView==='history') setDashboardView('home'); }} className="btn danger">Ja, alles verwijderen</button>
-              <button onClick={() => setShowClearAllConfirm(false)} className="btn subtle">Annuleren</button>
+        <Portal>
+          <div className="modal modern-modal" role="dialog" aria-modal="true" onMouseDown={e => { if (!(e.target as HTMLElement).closest('.modal-content')) setShowClearAllConfirm(false); }}>
+            <div className="modal-content modern-modal-content" role="document" onMouseDown={e => e.stopPropagation()}>
+              <h3>Alle Versies Verwijderen</h3>
+              <p>Weet je zeker dat je alle geschiedenis wilt verwijderen? Alleen de huidige versie blijft als v1.</p>
+              <div className="modal-actions">
+                <button onClick={() => { handleClearHistory(); setShowClearAllConfirm(false); if(dashboardView==='history') setDashboardView('home'); }} className="btn danger">Ja, alles verwijderen</button>
+                <button onClick={() => setShowClearAllConfirm(false)} className="btn subtle">Annuleren</button>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
+      )}
+      {deleteConfirmIdx !== null && (
+        <Portal>
+          <div className="modal modern-modal" role="dialog" aria-modal="true" onMouseDown={e => { if (!(e.target as HTMLElement).closest('.modal-content')) cancelDelete(); }}>
+            <div className="modal-content modern-modal-content" role="document" onMouseDown={e => e.stopPropagation()}>
+              <h3>Versie Verwijderen</h3>
+              <p>Weet je zeker dat je deze versie definitief wilt verwijderen?</p>
+              <div className="modal-actions">
+                <button onClick={confirmDelete} className="btn danger">Ja, verwijderen</button>
+                <button onClick={cancelDelete} className="btn subtle">Annuleren</button>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+      {showAddBlockMenu && (
+        <Portal>
+          <div className="modal modern-modal" role="dialog" aria-modal="true" onMouseDown={e => { if (!(e.target as HTMLElement).closest('.modal-content')) setShowAddBlockMenu(false); }}>
+            <div className="modal-content modern-modal-content" role="document" onMouseDown={e => e.stopPropagation()}>
+              <h3>Nieuw blok toevoegen</h3>
+              <div className="modal-actions" style={{justifyContent:'flex-start', flexWrap:'wrap'}}>
+                <button onClick={() => { addBlock(selectedPage, 'heading'); setShowAddBlockMenu(false); }} className="btn">Heading</button>
+                <button onClick={() => { addBlock(selectedPage, 'text'); setShowAddBlockMenu(false); }} className="btn">Text</button>
+                <button onClick={() => { addBlock(selectedPage, 'divider'); setShowAddBlockMenu(false); }} className="btn">Divider</button>
+                <button onClick={() => { addBlock(selectedPage, 'quote'); setShowAddBlockMenu(false); }} className="btn">Quote</button>
+              </div>
+              <div className="modal-actions">
+                <button onClick={() => setShowAddBlockMenu(false)} className="btn subtle">Sluiten</button>
+              </div>
+            </div>
+          </div>
+        </Portal>
       )}
       {mainColorDropdownOpen && (
-        <div className="color-modal-overlay" role="dialog" aria-modal="true" onMouseDown={e => {
-          if (!(e.target as HTMLElement).closest('.color-modal')) setMainColorDropdownOpen(false);
-        }}>
-          <div className="color-modal" role="document">
-            <div className="color-modal-head">
-              <h4>Kies Thema Kleur</h4>
-              <button type="button" className="color-modal-close" aria-label="Sluiten" onClick={() => setMainColorDropdownOpen(false)}>×</button>
-            </div>
-            <div className="color-palette-group">
-              <div className="color-palette-label">THEMA</div>
-              <div className="color-palette-row">
-                {THEME_COLORS.map(color => (
-                  <button
-                    key={color}
-                    className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
-                    style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
-                    onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
-                    aria-label={`Stel hoofdkleur in op ${color}`}
-                  />
-                ))}
+        <Portal>
+          <div className="color-modal-overlay" role="dialog" aria-modal="true" onMouseDown={e => {
+            if (!(e.target as HTMLElement).closest('.color-modal')) setMainColorDropdownOpen(false);
+          }}>
+            <div className="color-modal" role="document">
+              <div className="color-modal-head">
+                <h4>Kies Thema Kleur</h4>
+                <button type="button" className="color-modal-close" aria-label="Sluiten" onClick={() => setMainColorDropdownOpen(false)}>×</button>
               </div>
-              <div className="color-palette-label">DEFAULT</div>
-              <div className="color-palette-row">
-                {DEFAULT_COLORS.map(color => (
-                  <button
-                    key={color}
-                    className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
-                    style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
-                    onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
-                    aria-label={`Stel hoofdkleur in op ${color}`}
-                  />
-                ))}
-              </div>
-              <div className="color-palette-label">CUSTOM</div>
-              <div className="color-palette-row">
-                {customColors.map(color => (
-                  <div key={color} style={{ position: 'relative' }}>
+              <div className="color-palette-group">
+                <div className="color-palette-label">THEMA</div>
+                <div className="color-palette-row">
+                  {THEME_COLORS.map(color => (
                     <button
+                      key={color}
                       className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
                       style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
                       onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
                       aria-label={`Stel hoofdkleur in op ${color}`}
                     />
-                    <button className="color-swatch-remove" onClick={() => removeCustomColor(color)} aria-label="Verwijder custom kleur">×</button>
-                  </div>
-                ))}
-                <label className="color-swatch-add">
-                  +
-                  <input type="color" style={{ opacity: 0, width: 0, height: 0 }} onChange={e => addCustomColor(e.target.value)} />
-                </label>
+                  ))}
+                </div>
+                <div className="color-palette-label">DEFAULT</div>
+                <div className="color-palette-row">
+                  {DEFAULT_COLORS.map(color => (
+                    <button
+                      key={color}
+                      className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
+                      style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
+                      onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
+                      aria-label={`Stel hoofdkleur in op ${color}`}
+                    />
+                  ))}
+                </div>
+                <div className="color-palette-label">CUSTOM</div>
+                <div className="color-palette-row">
+                  {customColors.map(color => (
+                    <div key={color} style={{ position: 'relative' }}>
+                      <button
+                        className={`color-swatch${content.mainColor === color ? ' selected' : ''}`}
+                        style={{ background: color, borderColor: color === '#fff' ? '#ccc' : color }}
+                        onClick={() => { setMainColorFromPalette(color); setMainColorDropdownOpen(false); }}
+                        aria-label={`Stel hoofdkleur in op ${color}`}
+                      />
+                      <button className="color-swatch-remove" onClick={() => removeCustomColor(color)} aria-label="Verwijder custom kleur">×</button>
+                    </div>
+                  ))}
+                  <label className="color-swatch-add">
+                    +
+                    <input type="color" style={{ opacity: 0, width: 0, height: 0 }} onChange={e => addCustomColor(e.target.value)} />
+                  </label>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
       {/* ...existing version/history modals and block delete modal... */}
     </div>

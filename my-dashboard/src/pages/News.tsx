@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useAuth, authHeader } from '../AuthContext';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -15,6 +16,7 @@ export type NewsPost = {
 };
 
 const News: React.FC = () => {
+  const { token } = useAuth();
   const [posts, setPosts] = useState<NewsPost[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -56,7 +58,7 @@ const News: React.FC = () => {
       try {
         const form = new FormData();
         imageFiles.forEach(f => form.append('images', f));
-        const up = await fetch(`${BACKEND_API_URL}/api/news/upload`, { method: 'POST', body: form });
+  const up = await fetch(`${BACKEND_API_URL}/api/news/upload`, { method: 'POST', headers: { ...authHeader(token) }, body: form });
         if (up.ok) {
           const body = await up.json();
           uploaded = Array.isArray(body.urls) ? body.urls.map((u: string) => u.startsWith('http') ? u : `${BACKEND_API_URL}${u}`) : [];
@@ -75,7 +77,7 @@ const News: React.FC = () => {
       datetime: now.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
     };
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/news`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const res = await fetch(`${BACKEND_API_URL}/api/news`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeader(token) }, body: JSON.stringify(payload) });
       if (res.ok) {
         const created = await res.json();
         setPosts(ps => [created, ...ps]);
@@ -91,7 +93,7 @@ const News: React.FC = () => {
 
   const removePost = async (id: string) => {
     setPosts(ps => ps.filter(p => p.id !== id));
-    try { await fetch(`${BACKEND_API_URL}/api/news/${id}`, { method: 'DELETE' }); } catch {}
+  try { await fetch(`${BACKEND_API_URL}/api/news/${id}`, { method: 'DELETE', headers: { ...authHeader(token) } }); } catch {}
   };
 
   return (

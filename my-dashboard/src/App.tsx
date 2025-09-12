@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import Menu from './pages/Menu';
 import Contact from './pages/Contact';
@@ -7,9 +7,11 @@ import Dashboard from './pages/Dashboard';
 import NewsPublic from './pages/NewsPublic';
 import Rules from './pages/Rules';
 import RulesAdmin from './pages/RulesAdmin';
+import Login from './pages/Login';
 import Footer from './components/Footer';
 import { DashboardContentProvider, useDashboardContent } from './DashboardContentContext';
 import DockNav from './components/DockNav';
+import { AuthProvider, useAuth } from './AuthContext';
 
 const AppContent = () => {
   const content = useDashboardContent();
@@ -138,15 +140,16 @@ const AppContent = () => {
         <>
           {/* Verberg globale site navigatie op dashboard */}
           {!window.location.pathname.startsWith('/dashboard') && <DockNav />}
-          <main className={window.location.pathname.startsWith('/dashboard') ? 'no-dock-pad' : ''}>
+      <main className={window.location.pathname.startsWith('/dashboard') ? 'no-dock-pad' : ''}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/menu" element={<Menu />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/nieuws" element={<NewsPublic />} />
               <Route path="/spelregels" element={<Rules />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/dashboard/rules" element={<RulesAdmin />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard/rules" element={<ProtectedRoute><RulesAdmin /></ProtectedRoute>} />
             </Routes>
           </main>
           <Footer />
@@ -156,11 +159,20 @@ const AppContent = () => {
   );
 };
 
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { token } = useAuth();
+  const location = useLocation();
+  if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
+  return <>{children}</>;
+};
+
 const App = () => (
   <Router>
-    <DashboardContentProvider>
-      <AppContent />
-    </DashboardContentProvider>
+    <AuthProvider>
+      <DashboardContentProvider>
+        <AppContent />
+      </DashboardContentProvider>
+    </AuthProvider>
   </Router>
 );
 

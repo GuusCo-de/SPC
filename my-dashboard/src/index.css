@@ -190,9 +190,9 @@ body:not(.dashboard-no-pad) .hero-card {
   justify-content: center; /* center content vertically within hero viewport */
   text-align: center;
   backdrop-filter: blur(4px);
-  /* Full viewport height minus the padding space added to main for nav (7rem) */
-  min-height: calc(100vh - 7rem);
-  margin: 0 auto clamp(3rem,6vh,5rem); /* bottom margin responsive, no top gap */
+  /* Fixed-height card; background stays 100vh behind it */
+  height: 480px;
+  margin: 10vh auto 10vh; /* bottom margin responsive, no top gap */
 }
 
 .hero-img {
@@ -317,7 +317,7 @@ nav, main, .info-section {
 }
 
 @media (max-height: 760px) {
-  .hero-card { min-height: calc(100vh - 7rem - 40px); padding: 2.5rem 2.2rem 2.2rem; }
+  .hero-card { height: 400px; padding: 2.5rem 2.2rem 2.2rem; }
 }
 
 .info-content {

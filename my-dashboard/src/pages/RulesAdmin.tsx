@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import '../pages/Dashboard.css';
 import { GAMES_FALLBACK } from './Rules';
+import { useAuth, authHeader } from '../AuthContext';
 
 type GameRule = {
   id: string;
@@ -32,6 +33,7 @@ const TYPES = ['Pool','Snooker','Carambole','Gezelschap'];
 const BACKEND_API_URL = (import.meta.env.VITE_BACKEND_URL || 'https://spc-8hcz.onrender.com').replace(/\/$/, '');
 
 const RulesAdmin: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
+  const { token } = useAuth();
   const [rules, setRules] = useState<GameRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,7 +42,7 @@ const RulesAdmin: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
 
   useEffect(()=>{ (async()=>{
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/rules`);
+  const res = await fetch(`${BACKEND_API_URL}/api/rules`);
       const data = await res.json();
       if (Array.isArray(data) && data.length) {
         setRules(data);
@@ -120,7 +122,7 @@ const RulesAdmin: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
     try {
       const ordered = rules.map((r,i)=> ({ ...r, order: i }));
       setRules(ordered);
-      await fetch(`${BACKEND_API_URL}/api/rules`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ordered) });
+  await fetch(`${BACKEND_API_URL}/api/rules`, { method:'POST', headers:{'Content-Type':'application/json', ...authHeader(token)}, body: JSON.stringify(ordered) });
     } finally { setSaving(false); }
   };
 

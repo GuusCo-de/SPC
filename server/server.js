@@ -4,6 +4,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,8 +43,8 @@ try {
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Serve uploaded images
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
+// Serve uploaded images (store inside DATA_DIR so they persist if a disk is mounted)
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 app.use('/uploads', express.static(UPLOAD_DIR));
 
@@ -55,6 +58,33 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage });
+
+// ======== Simple JWT Auth ========
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
+
+function authMiddleware(req, res, next) {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    return next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body || {};
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '2h' });
+    return res.json({ token, user: { username } });
+  }
+  return res.status(401).json({ error: 'Invalid credentials' });
+});
 
 // Helper to read content
 function readContent() {
@@ -105,7 +135,7 @@ app.get('/api/dashboard-content', (req, res) => {
 });
 
 // POST new dashboard content
-app.post('/api/dashboard-content', (req, res) => {
+app.post('/api/dashboard-content', authMiddleware, (req, res) => {
   const { content, history } = req.body;
   if (!content || !history) {
     console.error('Missing content or history in POST /api/dashboard-content', req.body);
@@ -144,7 +174,7 @@ function listBackups() {
 }
 
 // Create & return a fresh backup (also returns the JSON so client can download directly)
-app.get('/api/dashboard-content/backup', (req, res) => {
+app.get('/api/dashboard-content/backup', authMiddleware, (req, res) => {
   try {
     const current = readContent();
     if (!current) return res.status(404).json({ success: false, error: 'No content' });
@@ -159,12 +189,12 @@ app.get('/api/dashboard-content/backup', (req, res) => {
 });
 
 // List existing backups
-app.get('/api/dashboard-content/backups', (_req, res) => {
+app.get('/api/dashboard-content/backups', authMiddleware, (_req, res) => {
   res.json({ success: true, backups: listBackups() });
 });
 
 // Restore from backup name
-app.post('/api/dashboard-content/restore', (req, res) => {
+app.post('/api/dashboard-content/restore', authMiddleware, (req, res) => {
   const { name } = req.body || {};
   if (!name) return res.status(400).json({ success: false, error: 'Missing backup name' });
   const target = path.join(DATA_DIR, name);
@@ -205,7 +235,7 @@ app.get('/api/news', (_req, res) => {
 });
 
 // Create news post
-app.post('/api/news', (req, res) => {
+app.post('/api/news', authMiddleware, (req, res) => {
   try {
     const { id, title, description, images, datetime, bigImage } = req.body || {};
     if (!id || !title) return res.status(400).json({ error: 'Missing id or title' });
@@ -220,7 +250,7 @@ app.post('/api/news', (req, res) => {
 });
 
 // Delete news post
-app.delete('/api/news/:id', (req, res) => {
+app.delete('/api/news/:id', authMiddleware, (req, res) => {
   try {
     const id = req.params.id;
     let news = readNewsArray();
@@ -235,7 +265,7 @@ app.delete('/api/news/:id', (req, res) => {
 });
 
 // Upload images (multiple)
-app.post('/api/news/upload', upload.array('images', 10), (req, res) => {
+app.post('/api/news/upload', authMiddleware, upload.array('images', 10), (req, res) => {
   try {
     const files = req.files || [];
     const urls = Array.isArray(files) ? files.map(f => '/uploads/' + f.filename) : [];
@@ -246,7 +276,7 @@ app.post('/api/news/upload', upload.array('images', 10), (req, res) => {
 });
 
 // Generic background images upload
-app.post('/api/backgrounds/upload', upload.array('backgrounds', 15), (req, res) => {
+app.post('/api/backgrounds/upload', authMiddleware, upload.array('backgrounds', 15), (req, res) => {
   try {
     const files = req.files || [];
     const urls = Array.isArray(files) ? files.map(f => '/uploads/' + f.filename) : [];
@@ -282,7 +312,7 @@ app.get('/api/rules', (_req, res) => {
 });
 
 // Replace rules array (bulk save)
-app.post('/api/rules', (req, res) => {
+app.post('/api/rules', authMiddleware, (req, res) => {
   try {
     const rules = Array.isArray(req.body) ? req.body : req.body.rules;
     if (!Array.isArray(rules)) return res.status(400).json({ error: 'Expected array of rules' });
